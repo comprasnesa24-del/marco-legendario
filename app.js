@@ -12,6 +12,7 @@ const messageText = document.querySelector("#messageText");
 const storyVisual = document.querySelector("#storyVisual");
 const endingImage = document.querySelector("#endingImage");
 const messageCard = messageScreen.querySelector(".overlay-card");
+const stage = document.querySelector(".stage");
 
 const W = canvas.width;
 const H = canvas.height;
@@ -124,23 +125,15 @@ function prepareBoxPlatforms(raw) {
 }
 
 function ensureBasicJumpRoute(raw) {
-  const route = raw.platforms
-    .filter(([,y,w]) => y >= 300 && w >= 150)
-    .sort((a,b) => a[0]-b[0]);
-  for(let i=0;i<route.length-1;i++){
-    const [x,y,w] = route[i];
-    const [nx,ny] = route[i+1];
-    const gap = nx-(x+w);
-    if(gap>250){
-      const bridgeCount=Math.ceil(gap/230)-1;
-      for(let b=1;b<=bridgeCount;b++){
-        const t=b/(bridgeCount+1);
-        raw.platforms.push([x+w+t*gap-75,y+(ny-y)*t,150,22]);
-      }
-    }
-    if(Math.abs(ny-y)>155 && gap>80){
-      raw.platforms.push([nx-130,(y+ny)/2,145,22]);
-    }
+  const safeY = [540, 500, 530, 490, 520, 550];
+  let step = 0;
+  for (let x = 430; x < raw.width - 320; x += 230) {
+    const y = safeY[step % safeY.length];
+    const covered = raw.platforms.some(([px,py,pw]) =>
+      py >= 450 && py <= 610 && px <= x + 50 && px + pw >= x + 180
+    );
+    if (!covered) raw.platforms.push([x, y, 180, 22]);
+    step++;
   }
 }
 
@@ -636,6 +629,11 @@ document.querySelectorAll("[data-control]").forEach(button => {
   button.addEventListener("pointerdown", e => { e.preventDefault(); keys[control]=true; });
   button.addEventListener("pointerup", () => keys[control]=false);
   button.addEventListener("pointercancel", () => keys[control]=false);
+});
+stage.addEventListener("pointerdown", e => {
+  if (e.pointerType === "mouse" || e.target.closest("button") || state !== "playing") return;
+  e.preventDefault();
+  keys.jump = true;
 });
 document.querySelector("#startButton").addEventListener("click", startGame);
 document.querySelector("#restartButton").addEventListener("click", () => { loadLevel(levelIndex); state="playing"; messageScreen.classList.remove("visible"); });

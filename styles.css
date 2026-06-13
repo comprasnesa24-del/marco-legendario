@@ -204,19 +204,20 @@ footer button { padding: 8px 12px; font-size: 11px; }
   .keys { justify-content: center; }
   .mobile-controls {
     position: absolute;
-    inset: auto 12px 12px;
+    inset: auto 16px 16px;
     display: flex;
-    gap: 8px;
+    gap: 14px;
     pointer-events: none;
   }
   .mobile-controls button {
-    width: 55px;
-    height: 55px;
-    border: 1px solid #ffffff33;
+    width: 86px;
+    height: 86px;
+    border: 2px solid #ffffff55;
     border-radius: 50%;
     color: white;
-    background: #17192eb8;
-    font-size: 22px;
+    background: #17192ed8;
+    box-shadow: 0 8px 24px #0007;
+    font-size: 34px;
     pointer-events: auto;
     touch-action: none;
   }
@@ -292,8 +293,8 @@ footer button { padding: 8px 12px; font-size: 11px; }
   }
 
   .mobile-controls button {
-    width: clamp(44px, 10dvh, 58px);
-    height: clamp(44px, 10dvh, 58px);
+    width: clamp(78px, 18dvh, 104px);
+    height: clamp(78px, 18dvh, 104px);
   }
 
   .overlay { padding: 12px; }
