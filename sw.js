@@ -1,10 +1,10 @@
-const CACHE_NAME = "marco-legendario-v5";
+const CACHE_NAME = "marco-legendario-v6";
 const BASE = "/marco-legendario/";
 const CORE_ASSETS = [
   BASE,
   `${BASE}index.html`,
-  `${BASE}styles.css?v=marco-5`,
-  `${BASE}app.js?v=marco-5`,
+  `${BASE}styles.css?v=marco-6`,
+  `${BASE}app.js?v=marco-6`,
   `${BASE}manifest.json`,
   `${BASE}icon-192.png`,
   `${BASE}icon-512.png`,
@@ -16,7 +16,11 @@ const CORE_ASSETS = [
 ];
 
 self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS)));
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.allSettled(CORE_ASSETS.map(asset => cache.add(asset)))
+    )
+  );
   self.skipWaiting();
 });
 
@@ -39,7 +43,7 @@ self.addEventListener("fetch", event => {
           caches.open(CACHE_NAME).then(cache => cache.put(BASE, copy));
           return response;
         })
-        .catch(() => caches.match(BASE))
+        .catch(() => caches.match(BASE).then(cached => cached || caches.match(`${BASE}index.html`)))
     );
     return;
   }
