@@ -615,6 +615,20 @@ function setKey(event, pressed) {
   if (["ArrowRight","KeyD"].includes(event.code)) keys.right=pressed;
   if (["ArrowUp","KeyW","Space"].includes(event.code)) { if (pressed && !event.repeat) keys.jump=true; event.preventDefault(); }
 }
+
+function syncMobileViewport() {
+  const viewport = window.visualViewport;
+  const width = viewport?.width || window.innerWidth;
+  const height = viewport?.height || window.innerHeight;
+  document.documentElement.style.setProperty("--app-height", `${Math.round(height)}px`);
+  document.documentElement.style.setProperty("--landscape-stage-width", `${Math.round(Math.min(width, height * 16 / 9))}px`);
+}
+
+syncMobileViewport();
+addEventListener("resize", syncMobileViewport);
+addEventListener("orientationchange", syncMobileViewport);
+window.visualViewport?.addEventListener("resize", syncMobileViewport);
+
 addEventListener("keydown", e => setKey(e,true));
 addEventListener("keyup", e => setKey(e,false));
 document.querySelectorAll("[data-control]").forEach(button => {

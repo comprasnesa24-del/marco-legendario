@@ -223,3 +223,83 @@ footer button { padding: 8px 12px; font-size: 11px; }
   .mobile-controls .jump { margin-left: auto; background: #7557ffcc; }
   footer { padding: 10px 14px; }
 }
+
+@media (orientation: landscape) and (pointer: coarse), (orientation: landscape) and (max-height: 600px) {
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body { min-height: var(--app-height, 100dvh); }
+
+  .game-shell {
+    position: relative;
+    display: grid;
+    width: 100%;
+    height: var(--app-height, 100dvh);
+    min-height: 0;
+    padding: 0;
+    place-items: center;
+  }
+
+  .topbar {
+    position: absolute;
+    z-index: 5;
+    top: max(6px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+    left: max(8px, env(safe-area-inset-left));
+    justify-content: flex-end;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+  }
+
+  .brand, footer { display: none; }
+  .hud { gap: 5px; pointer-events: none; }
+  .hud div {
+    padding: 4px 7px;
+    border-color: #ffffff28;
+    background: #101225b8;
+    backdrop-filter: blur(5px);
+  }
+  .hud span { font-size: 6px; }
+  .hud strong { font-size: 11px; }
+  .hud div:nth-child(2) { display: none; }
+  .icon-button {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+    pointer-events: auto;
+  }
+
+  .stage {
+    width: var(--landscape-stage-width, min(100vw, 177.7778dvh));
+    max-width: 100%;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  canvas {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+
+  .mobile-controls {
+    inset: auto max(12px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+
+  .mobile-controls button {
+    width: clamp(44px, 10dvh, 58px);
+    height: clamp(44px, 10dvh, 58px);
+  }
+
+  .overlay { padding: 12px; }
+  .overlay-card { max-height: 94dvh; overflow: auto; }
+  .overlay h2 { font-size: clamp(28px, 8dvh, 56px); }
+  .overlay-card > p:not(.kicker) { margin-block: 8px; line-height: 1.35; }
+  .keys { margin-top: 10px; }
+  .primary-button { margin-top: 6px; padding-block: 10px; }
+}
