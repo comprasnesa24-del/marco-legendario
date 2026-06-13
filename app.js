@@ -4,6 +4,7 @@ const startScreen = document.querySelector("#startScreen");
 const messageScreen = document.querySelector("#messageScreen");
 const levelLabel = document.querySelector("#levelLabel");
 const coinLabel = document.querySelector("#coinLabel");
+const bananaLabel = document.querySelector("#bananaLabel");
 const boxLabel = document.querySelector("#boxLabel");
 const livesLabel = document.querySelector("#livesLabel");
 const messageKicker = document.querySelector("#messageKicker");
@@ -18,7 +19,7 @@ const introMusicButton = document.querySelector("#introMusicButton");
 const W = canvas.width;
 const H = canvas.height;
 const FLOOR = 610;
-const keys = { left: false, right: false, jump: false };
+const keys = { left: false, right: false, jump: false, fire: false };
 let levelIndex = 0;
 let lives = 3;
 let coins = 0;
@@ -32,6 +33,8 @@ let boss;
 let runPhase = 0;
 let nextLevelIndex = null;
 let perfectLevels = [false,false,false,false];
+let bananaAmmo = 0;
+let bananas = [];
 
 const playerImage = new Image();
 playerImage.src = "character.png";
@@ -106,7 +109,7 @@ function extendLevel(raw, index) {
     if (step%3===1) raw.moving.push([x+210,Math.min(560,y+65),105,22,55+index*12]);
     if (step%4===2) raw.spikes.push([x+205,585,72]);
     if (step%3===0) raw.boxes.splice(raw.boxes.length-1,0,[x+65,y-120,"coin"]);
-    x += index===1 ? 330 : 300;
+    x += index===1 ? 450 : 420;
     step++;
   }
   raw.platforms.push([newWidth-620,610,620,110]);
@@ -128,12 +131,12 @@ function prepareBoxPlatforms(raw) {
 function ensureBasicJumpRoute(raw) {
   const safeY = [540, 500, 530, 490, 520, 550];
   let step = 0;
-  for (let x = 430; x < raw.width - 320; x += 230) {
+  for (let x = 430; x < raw.width - 320; x += 360) {
     const y = safeY[step % safeY.length];
     const covered = raw.platforms.some(([px,py,pw]) =>
       py >= 450 && py <= 610 && px <= x + 50 && px + pw >= x + 180
     );
-    if (!covered) raw.platforms.push([x, y, 180, 22]);
+    if (!covered) raw.platforms.push([x, y, 220, 22]);
     step++;
   }
 }
@@ -143,6 +146,7 @@ function loadLevel(index) {
   level = structuredClone(levels[index]);
   level.moving ||= [];
   extendLevel(level,index);
+  level.boxes[0][2] = "bananas";
   prepareBoxPlatforms(level);
   ensureBasicJumpRoute(level);
   const extraEnemyPlatforms = level.platforms.filter(([,y,w,h]) => h <= 30 && w >= 170 && y >= 340);
@@ -160,6 +164,8 @@ function loadLevel(index) {
   ][index];
   level.enemies = level.enemies.map(([x,y,range]) => ({ ...enemyStats, x, y:y+(38-enemyStats.h), start:x, range, dir:1, alive:true, invulnerable:0 }));
   level.openedBoxes = 0;
+  bananaAmmo = 0;
+  bananas = [];
   player = { x: 100, y: 510, w: 58, h: 78, vx: 0, vy: 0, grounded: false, facing: 1, invulnerable: 0, hasMonkey: companionUnlocked, jumpsUsed: 0 };
   cameraX = 0;
   particles = [];
@@ -172,6 +178,7 @@ function loadLevel(index) {
 function updateHud() {
   levelLabel.textContent = `${levelIndex + 1} / ${levels.length}`;
   coinLabel.textContent = coins;
+  bananaLabel.textContent = bananaAmmo;
   boxLabel.textContent = `${level.openedBoxes} / ${level.boxes.length}`;
   livesLabel.innerHTML = "<i></i>".repeat(Math.max(0, lives));
 }
@@ -189,6 +196,21 @@ function startGame() {
 
 function rectHit(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function fireBanana() {
+  if (bananaAmmo <= 0 || state !== "playing") return;
+  bananaAmmo--;
+  bananas.push({
+    x: player.x + player.w / 2 + player.facing * 28,
+    y: player.y + player.h * .38,
+    vx: player.facing * 10,
+    vy: -9,
+    rotation: 0,
+    life: 150
+  });
+  beep(520, .06);
+  updateHud();
 }
 
 function beep(frequency, duration = .08) {
@@ -265,7 +287,7 @@ function completeLevel() {
 
 function update(dt) {
   if (state !== "playing") return;
-  const speed = player.hasMonkey ? 13 : 9;
+  const speed = player.hasMonkey ? 9.5 : 6.5;
   player.vx += ((keys.right ? speed : 0) - (keys.left ? speed : 0) - player.vx) * .22;
   if (keys.left) player.facing = -1;
   if (keys.right) player.facing = 1;
@@ -276,6 +298,8 @@ function update(dt) {
     beep(player.jumpsUsed === 2 ? 620 : 360);
   }
   keys.jump = false;
+  if (keys.fire) fireBanana();
+  keys.fire = false;
   player.vy = Math.min(player.vy + 1.05, 22);
   player.x += player.vx;
   player.x = Math.max(0, Math.min(level.width - player.w, player.x));
@@ -320,6 +344,10 @@ function update(dt) {
         player.hasMonkey = true; companionUnlocked = true; beep(880, .25);
         monkeyPop = {x:box.x-2,y:box.y-5,life:75};
         for (let i=0;i<18;i++) particles.push({x:box.x+28,y:box.y,vx:Math.random()*8-4,vy:Math.random()*-7,life:40});
+      } else if (box.type === "bananas") {
+        bananaAmmo = 10;
+        beep(760,.25);
+        for (let i=0;i<10;i++) particles.push({x:box.x+28,y:box.y,vx:Math.random()*8-4,vy:Math.random()*-7,life:45,type:"banana"});
       } else if (box.isLast) {
         lives = Math.min(3,lives+1);
         beep(980,.3);
@@ -364,6 +392,32 @@ function update(dt) {
       } else if (!enemy.invulnerable) receiveEnemyHit(enemy.x);
     }
   });
+
+  bananas.forEach(banana => {
+    banana.x += banana.vx * dt;
+    banana.y += banana.vy * dt;
+    banana.vy += .48 * dt;
+    banana.rotation += .24 * banana.vx / 10;
+    banana.life -= dt;
+    level.enemies.forEach(enemy => {
+      if (!enemy.alive || banana.hit || !rectHit({x:banana.x-12,y:banana.y-12,w:24,h:24}, enemy)) return;
+      enemy.hp--;
+      enemy.invulnerable = 20;
+      if (enemy.hp <= 0) enemy.alive = false;
+      banana.hit = true;
+      beep(250,.06);
+    });
+    if (boss && !boss.defeated && !banana.hit && rectHit({x:banana.x-12,y:banana.y-12,w:24,h:24}, boss)) {
+      if (!boss.invulnerable) {
+        boss.hp--;
+        boss.invulnerable = 40;
+        if (boss.hp <= 0) boss.defeated = true;
+      }
+      banana.hit = true;
+      beep(180,.08);
+    }
+  });
+  bananas = bananas.filter(banana => !banana.hit && banana.life > 0 && banana.y < H + 80);
 
   if (boss && !boss.defeated) {
     boss.x += boss.vx;
@@ -511,7 +565,7 @@ function draw() {
     roundedRect(box.x+5,by+5,46,46,7,box.used ? "#746682" : "#ffc857");
     ctx.fillStyle = box.used ? "#9587a3" : "#7b4b32";
     ctx.font = box.isLast && !box.used ? "900 21px DM Sans" : "900 34px DM Sans";
-    ctx.textAlign = "center"; ctx.fillText(box.used ? "·" : box.isLast ? "↑↑" : "?",box.x+28,by+40); ctx.textAlign = "left";
+    ctx.textAlign = "center"; ctx.fillText(box.used ? "·" : box.type === "bananas" ? "🍌" : box.isLast ? "↑↑" : "?",box.x+28,by+40); ctx.textAlign = "left";
     if(box.isLast && levelIndex===0 && box.secretJumps>0 && box.secretJumps<10){
       ctx.fillStyle="#fff";ctx.font="800 12px DM Sans";ctx.textAlign="center";ctx.fillText(`${box.secretJumps}/10`,box.x+28,by-10);ctx.textAlign="left";
     }
@@ -549,6 +603,24 @@ function draw() {
     ctx.restore();
   }
 
+  bananas.forEach(banana => {
+    ctx.save();
+    ctx.translate(banana.x, banana.y);
+    ctx.rotate(banana.rotation);
+    ctx.strokeStyle="#ffd43b";
+    ctx.lineWidth=8;
+    ctx.lineCap="round";
+    ctx.beginPath();
+    ctx.arc(0,0,13,.25,Math.PI*1.35);
+    ctx.stroke();
+    ctx.strokeStyle="#7a4b17";
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.arc(0,0,13,.25,Math.PI*1.35);
+    ctx.stroke();
+    ctx.restore();
+  });
+
   const [gx,gy] = level.goal;
   if (levelIndex === levels.length - 1 && boss?.defeated && motherImage.complete && motherImage.naturalWidth) {
     ctx.globalAlpha=.22; ctx.beginPath();ctx.arc(gx+35,gy+45,78,0,Math.PI*2);ctx.fillStyle="#ffd45c";ctx.fill();ctx.globalAlpha=1;
@@ -566,6 +638,9 @@ function draw() {
       ctx.beginPath();ctx.arc(p.x,p.y,12,0,Math.PI*2);ctx.fillStyle="#ffd45c";ctx.fill();
       ctx.beginPath();ctx.arc(p.x-3,p.y-3,4,0,Math.PI*2);ctx.fillStyle="#fff1a5";ctx.fill();
     } else if (p.type === "satchel") drawSatchel(p.x,p.y);
+    else if (p.type === "banana") {
+      ctx.strokeStyle="#ffd43b";ctx.lineWidth=6;ctx.beginPath();ctx.arc(p.x,p.y,10,.2,Math.PI*1.3);ctx.stroke();
+    }
     else drawStar(p.x,p.y,5,"#ffd45c");
   });
   ctx.globalAlpha=1; ctx.restore();
@@ -612,6 +687,7 @@ function setKey(event, pressed) {
   if (["ArrowLeft","KeyA"].includes(event.code)) keys.left=pressed;
   if (["ArrowRight","KeyD"].includes(event.code)) keys.right=pressed;
   if (["ArrowUp","KeyW","Space"].includes(event.code)) { if (pressed && !event.repeat) keys.jump=true; event.preventDefault(); }
+  if (["KeyF","KeyX"].includes(event.code)) { if (pressed && !event.repeat) keys.fire=true; event.preventDefault(); }
 }
 
 function syncMobileViewport() {

@@ -235,6 +235,8 @@ footer button { padding: 8px 12px; font-size: 11px; }
     touch-action: none;
   }
   .mobile-controls .jump { margin-left: auto; background: #7557ffcc; }
+  .mobile-controls .fire { margin-left: auto; background: #d69c16dd; }
+  .mobile-controls .fire + .jump { margin-left: 0; }
   footer { padding: 10px 14px; }
 }
 
@@ -306,8 +308,8 @@ footer button { padding: 8px 12px; font-size: 11px; }
   }
 
   .mobile-controls button {
-    width: clamp(78px, 18dvh, 104px);
-    height: clamp(78px, 18dvh, 104px);
+    width: clamp(72px, 16dvh, 94px);
+    height: clamp(72px, 16dvh, 94px);
   }
 
   .overlay { padding: 12px; }
