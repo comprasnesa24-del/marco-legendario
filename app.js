@@ -183,11 +183,12 @@ function loadLevel(index) {
 }
 
 function updateHud() {
+  const requiredBoxes = level.boxes.filter(box => box.countsForCompletion !== false);
   levelLabel.textContent = `${levelIndex + 1} / ${levels.length}`;
   coinLabel.textContent = coins;
   bananaLabel.textContent = bananaAmmo;
   mobileBananaLabel.textContent = bananaAmmo;
-  boxLabel.textContent = `${level.openedBoxes} / ${level.boxes.length}`;
+  boxLabel.textContent = `${level.openedBoxes} / ${requiredBoxes.length}`;
   livesLabel.innerHTML = "<i></i>".repeat(Math.max(0, lives));
 }
 
@@ -217,6 +218,39 @@ function fireBanana() {
   updateHud();
 }
 
+function restoreMonkeyBoxAfterRespawn() {
+  player.hasMonkey = false;
+  companionUnlocked = false;
+
+  if (level.checkpoint.active) {
+    let recoveryBox = level.boxes.find(box => box.checkpointRecovery);
+    if (!recoveryBox) {
+      recoveryBox = {
+        x: level.checkpoint.x + 170,
+        y: 405,
+        type: "monkey",
+        used: false,
+        bump: 0,
+        isLast: false,
+        secretJumps: 0,
+        checkpointRecovery: true,
+        countsForCompletion: false
+      };
+      level.boxes.push(recoveryBox);
+    }
+    recoveryBox.used = false;
+    recoveryBox.bump = 0;
+    return;
+  }
+
+  const originalMonkeyBox = level.boxes.find(box => box.type === "monkey" && !box.checkpointRecovery);
+  if (originalMonkeyBox?.used) {
+    originalMonkeyBox.used = false;
+    originalMonkeyBox.bump = 0;
+    level.openedBoxes = Math.max(0, level.openedBoxes - 1);
+  }
+}
+
 function beep(frequency, duration = .08) {
   if (!audioEnabled) return;
   audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
@@ -240,6 +274,7 @@ function respawn() {
     player.x = level.checkpoint.active ? level.checkpoint.x + 35 : 100;
     player.y = level.checkpoint.active ? level.checkpoint.y : 500;
     player.vx = 0; player.vy = 0; player.invulnerable = 90; player.jumpsUsed = 0;
+    restoreMonkeyBoxAfterRespawn();
     bananaAmmo = 10;
     bananas = [];
     bananaRefillPop = { life: 90 };
@@ -274,7 +309,8 @@ function showMessage(kicker, title, text, button) {
 
 function completeLevel() {
   beep(740, .35);
-  perfectLevels[levelIndex] = level.coins.every(coin=>coin.taken) && level.boxes.every(box=>box.used);
+  const requiredBoxes = level.boxes.filter(box => box.countsForCompletion !== false);
+  perfectLevels[levelIndex] = level.coins.every(coin=>coin.taken) && requiredBoxes.every(box=>box.used);
   state = levelIndex === levels.length - 1 ? "won" : "complete";
   nextLevelIndex = state === "complete" ? levelIndex + 1 : null;
   const completedName = levels[levelIndex].name;
@@ -287,7 +323,7 @@ function completeLevel() {
       ? "Has recogido todos los puntos amarillos y abierto todas las cajas de los cuatro mundos. Marco, mamá y el mono celebran vuestra partida perfecta."
       : state === "won"
       ? `Has superado Argentina y derrotado a Francisco. Después de cruzar el mundo, mamá y tú volvéis a estar juntos. Recogiste ${coins} monedas.`
-      : `Has superado ${completedName} al alcanzar la estrella final. Abriste ${level.openedBoxes} de ${level.boxes.length} cajas. Siguiente parada: ${levels[levelIndex + 1].name}.`,
+      : `Has superado ${completedName} al alcanzar la estrella final. Abriste ${level.openedBoxes} de ${requiredBoxes.length} cajas. Siguiente parada: ${levels[levelIndex + 1].name}.`,
     state === "won" ? "Jugar de nuevo" : "Siguiente nivel"
   );
   messageCard.classList.toggle("victory",state === "won");
@@ -348,7 +384,8 @@ function update(dt) {
     const boxBottom = box.y + 56;
     const crossesBottom = oldTop >= boxBottom - 18 && player.y <= boxBottom + 8;
     if (!box.used && player.vy < 0 && crossesBottom && player.x + player.w > box.x - 8 && player.x < box.x + 64) {
-      player.y = box.y + 56; player.vy = 4; box.used = true; box.bump = 12; level.openedBoxes++;
+      player.y = box.y + 56; player.vy = 4; box.used = true; box.bump = 12;
+      if (box.countsForCompletion !== false) level.openedBoxes++;
       if (box.type === "monkey") {
         player.hasMonkey = true; companionUnlocked = true; beep(880, .25);
         monkeyPop = {x:box.x-2,y:box.y-5,life:75};
@@ -578,7 +615,7 @@ function draw() {
     roundedRect(box.x+5,by+5,46,46,7,box.used ? "#746682" : "#ffc857");
     ctx.fillStyle = box.used ? "#9587a3" : "#7b4b32";
     ctx.font = box.isLast && !box.used ? "900 21px DM Sans" : "900 34px DM Sans";
-    ctx.textAlign = "center"; ctx.fillText(box.used ? "·" : box.type === "bananas" ? "🍌" : box.isLast ? "↑↑" : "?",box.x+28,by+40); ctx.textAlign = "left";
+    ctx.textAlign = "center"; ctx.fillText(box.used ? "·" : box.checkpointRecovery ? "🐒" : box.type === "bananas" ? "🍌" : box.isLast ? "↑↑" : "?",box.x+28,by+40); ctx.textAlign = "left";
     if(box.isLast && levelIndex===0 && box.secretJumps>0 && box.secretJumps<10){
       ctx.fillStyle="#fff";ctx.font="800 12px DM Sans";ctx.textAlign="center";ctx.fillText(`${box.secretJumps}/10`,box.x+28,by-10);ctx.textAlign="left";
     }
