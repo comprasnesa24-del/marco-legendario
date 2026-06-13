@@ -10,7 +10,7 @@
     <link rel="manifest" href="/marco-legendario/manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-    <link rel="stylesheet" href="styles.css?v=marco-10">
+    <link rel="stylesheet" href="styles.css?v=marco-11">
   </head>
   <body>
     <main class="game-shell">
@@ -66,7 +66,7 @@
         <div class="mobile-controls" aria-label="Controles táctiles">
           <button data-control="left" type="button">←</button>
           <button data-control="right" type="button">→</button>
-          <button class="fire" data-control="fire" type="button" aria-label="Lanzar plátano">🍌</button>
+          <button class="fire" data-control="fire" type="button" aria-label="Lanzar plátano"><span>🍌</span><strong id="mobileBananaLabel">0</strong></button>
           <button class="jump" data-control="jump" type="button">↑</button>
         </div>
       </section>
@@ -77,7 +77,7 @@
       </footer>
     </main>
     <audio id="introMusic" src="intro-marco.mp3" preload="metadata" loop></audio>
-    <script src="app.js?v=marco-10"></script>
+    <script src="app.js?v=marco-11"></script>
     <script>
       if ("serviceWorker" in navigator) {
         addEventListener("load", () => {

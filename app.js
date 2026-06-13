@@ -5,6 +5,7 @@ const messageScreen = document.querySelector("#messageScreen");
 const levelLabel = document.querySelector("#levelLabel");
 const coinLabel = document.querySelector("#coinLabel");
 const bananaLabel = document.querySelector("#bananaLabel");
+const mobileBananaLabel = document.querySelector("#mobileBananaLabel");
 const boxLabel = document.querySelector("#boxLabel");
 const livesLabel = document.querySelector("#livesLabel");
 const messageKicker = document.querySelector("#messageKicker");
@@ -35,6 +36,7 @@ let nextLevelIndex = null;
 let perfectLevels = [false,false,false,false];
 let bananaAmmo = 0;
 let bananas = [];
+let bananaRefillPop = null;
 
 const playerImage = new Image();
 playerImage.src = "character.png";
@@ -166,6 +168,7 @@ function loadLevel(index) {
   level.openedBoxes = 0;
   bananaAmmo = 0;
   bananas = [];
+  bananaRefillPop = null;
   player = { x: 100, y: 510, w: 58, h: 78, vx: 0, vy: 0, grounded: false, facing: 1, invulnerable: 0, hasMonkey: companionUnlocked, jumpsUsed: 0 };
   cameraX = 0;
   particles = [];
@@ -179,6 +182,7 @@ function updateHud() {
   levelLabel.textContent = `${levelIndex + 1} / ${levels.length}`;
   coinLabel.textContent = coins;
   bananaLabel.textContent = bananaAmmo;
+  mobileBananaLabel.textContent = bananaAmmo;
   boxLabel.textContent = `${level.openedBoxes} / ${level.boxes.length}`;
   livesLabel.innerHTML = "<i></i>".repeat(Math.max(0, lives));
 }
@@ -204,8 +208,8 @@ function fireBanana() {
   bananas.push({
     x: player.x + player.w / 2 + player.facing * 28,
     y: player.y + player.h * .38,
-    vx: player.facing * 10,
-    vy: -9,
+    vx: player.facing * 7,
+    vy: -7,
     rotation: 0,
     life: 150
   });
@@ -236,6 +240,11 @@ function respawn() {
     player.x = level.checkpoint.active ? level.checkpoint.x + 35 : 100;
     player.y = level.checkpoint.active ? level.checkpoint.y : 500;
     player.vx = 0; player.vy = 0; player.invulnerable = 90; player.jumpsUsed = 0;
+    bananaAmmo = 10;
+    bananas = [];
+    bananaRefillPop = { life: 90 };
+    updateHud();
+    beep(760,.2);
     cameraX = Math.max(0,player.x-W*.35);
   }
 }
@@ -396,7 +405,7 @@ function update(dt) {
   bananas.forEach(banana => {
     banana.x += banana.vx * dt;
     banana.y += banana.vy * dt;
-    banana.vy += .48 * dt;
+    banana.vy += .72 * dt;
     banana.rotation += .24 * banana.vx / 10;
     banana.life -= dt;
     level.enemies.forEach(enemy => {
@@ -418,6 +427,10 @@ function update(dt) {
     }
   });
   bananas = bananas.filter(banana => !banana.hit && banana.life > 0 && banana.y < H + 80);
+  if (bananaRefillPop) {
+    bananaRefillPop.life -= dt;
+    if (bananaRefillPop.life <= 0) bananaRefillPop = null;
+  }
 
   if (boss && !boss.defeated) {
     boss.x += boss.vx;
@@ -632,6 +645,19 @@ function draw() {
   }
 
   if (!player.invulnerable || Math.floor(player.invulnerable/5)%2) drawPlayer();
+  if (bananaRefillPop) {
+    const lift = (90 - bananaRefillPop.life) * .45;
+    ctx.save();
+    ctx.translate(player.x + player.w + 28, player.y + 28 - lift);
+    ctx.globalAlpha = Math.min(1, bananaRefillPop.life / 25);
+    ctx.font = "900 30px DM Sans";
+    ctx.textAlign = "center";
+    ctx.fillText("🍌", 0, 0);
+    ctx.fillStyle = "#fff";
+    ctx.font = "900 15px DM Sans";
+    ctx.fillText("×10", 0, 20);
+    ctx.restore();
+  }
   particles.forEach(p => {
     ctx.globalAlpha=Math.min(1,p.life/30);
     if (p.type === "coin") {

@@ -237,6 +237,22 @@ footer button { padding: 8px 12px; font-size: 11px; }
   .mobile-controls .jump { margin-left: auto; background: #7557ffcc; }
   .mobile-controls .fire { margin-left: auto; background: #d69c16dd; }
   .mobile-controls .fire + .jump { margin-left: 0; }
+  .mobile-controls .fire { position: relative; }
+  .mobile-controls .fire strong {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    display: grid;
+    min-width: 29px;
+    height: 29px;
+    padding: 0 6px;
+    place-items: center;
+    border: 2px solid white;
+    border-radius: 999px;
+    color: #17192e;
+    background: var(--gold);
+    font-size: 15px;
+  }
   footer { padding: 10px 14px; }
 }
 
