@@ -12,6 +12,8 @@ const messageText = document.querySelector("#messageText");
 const storyVisual = document.querySelector("#storyVisual");
 const endingImage = document.querySelector("#endingImage");
 const messageCard = messageScreen.querySelector(".overlay-card");
+const introMusic = document.querySelector("#introMusic");
+const introMusicButton = document.querySelector("#introMusicButton");
 
 const W = canvas.width;
 const H = canvas.height;
@@ -175,6 +177,10 @@ function updateHud() {
 }
 
 function startGame() {
+  introMusic.pause();
+  introMusic.currentTime = 0;
+  introMusicButton.classList.remove("playing");
+  introMusicButton.textContent = "♪ Escuchar canción";
   lives = 3; coins = 0; companionUnlocked = false; perfectLevels=[false,false,false,false]; loadLevel(0); state = "playing";
   messageCard.classList.remove("victory");
   startScreen.classList.remove("visible");
@@ -635,6 +641,23 @@ document.addEventListener("pointerdown", e => {
   keys.jump = true;
 });
 document.querySelector("#startButton").addEventListener("click", startGame);
+introMusicButton.addEventListener("click", async () => {
+  if (!audioEnabled) {
+    audioEnabled = true;
+    document.querySelector("#soundButton").textContent = "♪";
+  }
+  if (introMusic.paused) {
+    try {
+      await introMusic.play();
+      introMusicButton.classList.add("playing");
+      introMusicButton.textContent = "❚❚ Pausar canción";
+    } catch {}
+  } else {
+    introMusic.pause();
+    introMusicButton.classList.remove("playing");
+    introMusicButton.textContent = "♪ Escuchar canción";
+  }
+});
 document.querySelector("#restartButton").addEventListener("click", () => { loadLevel(levelIndex); state="playing"; messageScreen.classList.remove("visible"); });
 document.querySelector("#continueButton").addEventListener("click", () => {
   messageScreen.classList.remove("visible");
@@ -648,6 +671,11 @@ document.querySelector("#continueButton").addEventListener("click", () => {
 });
 document.querySelector("#soundButton").addEventListener("click", e => {
   audioEnabled=!audioEnabled; e.currentTarget.textContent=audioEnabled ? "♪" : "×";
+  if (!audioEnabled) {
+    introMusic.pause();
+    introMusicButton.classList.remove("playing");
+    introMusicButton.textContent = "♪ Escuchar canción";
+  }
 });
 
 loadLevel(0);

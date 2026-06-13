@@ -10,7 +10,7 @@
     <link rel="manifest" href="/marco-legendario/manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-    <link rel="stylesheet" href="styles.css?v=marco-8">
+    <link rel="stylesheet" href="styles.css?v=marco-9">
   </head>
   <body>
     <main class="game-shell">
@@ -39,7 +39,10 @@
             <p class="kicker">UNA PEQUEÑA GRAN AVENTURA</p>
             <h2>Marco legendario<br><em>El niño Legendario buscando a mamá</em></h2>
             <p>Todo el camino se supera con un salto normal. El mono permite alcanzar la última caja; recoge todos los puntos y cajas para descubrir el final secreto.</p>
-            <button id="startButton" class="primary-button" type="button">Empezar aventura <span>→</span></button>
+            <div class="intro-actions">
+              <button id="introMusicButton" class="music-button" type="button">♪ Escuchar canción</button>
+              <button id="startButton" class="primary-button" type="button">Empezar aventura <span>→</span></button>
+            </div>
             <div class="keys">
               <span><b>← →</b> Mover</span>
               <span><b>ESPACIO</b> Saltar</span>
@@ -70,7 +73,8 @@
         <button id="restartButton" type="button">Reiniciar nivel</button>
       </footer>
     </main>
-    <script src="app.js?v=marco-8"></script>
+    <audio id="introMusic" src="intro-marco.mp3" preload="metadata" loop></audio>
+    <script src="app.js?v=marco-9"></script>
     <script>
       if ("serviceWorker" in navigator) {
         addEventListener("load", () => {
