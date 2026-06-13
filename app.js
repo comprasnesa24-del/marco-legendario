@@ -188,10 +188,6 @@ function updateHud() {
 }
 
 function startGame() {
-  introMusic.pause();
-  introMusic.currentTime = 0;
-  introMusicButton.classList.remove("playing");
-  introMusicButton.textContent = "♪ Escuchar canción";
   lives = 3; coins = 0; companionUnlocked = false; perfectLevels=[false,false,false,false]; loadLevel(0); state = "playing";
   messageCard.classList.remove("victory");
   startScreen.classList.remove("visible");

@@ -223,14 +223,14 @@ footer button { padding: 8px 12px; font-size: 11px; }
     pointer-events: none;
   }
   .mobile-controls button {
-    width: 86px;
-    height: 86px;
-    border: 2px solid #ffffff55;
+    width: 108px;
+    height: 108px;
+    border: 3px solid #ffffff66;
     border-radius: 50%;
     color: white;
     background: #17192ed8;
     box-shadow: 0 8px 24px #0007;
-    font-size: 34px;
+    font-size: 42px;
     pointer-events: auto;
     touch-action: none;
   }
@@ -324,8 +324,8 @@ footer button { padding: 8px 12px; font-size: 11px; }
   }
 
   .mobile-controls button {
-    width: clamp(72px, 16dvh, 94px);
-    height: clamp(72px, 16dvh, 94px);
+    width: clamp(92px, 21dvh, 122px);
+    height: clamp(92px, 21dvh, 122px);
   }
 
   .overlay { padding: 12px; }
