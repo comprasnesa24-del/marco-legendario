@@ -697,10 +697,11 @@ function drawPlayer() {
   if (activeImage.complete && activeImage.naturalWidth) {
     ctx.drawImage(activeImage,-w/2-14,-h/2-8,w+28,h+16);
     if (wearsJacket && player.hasMonkey) {
-      ctx.fillStyle="#f4f0e9";ctx.beginPath();ctx.ellipse(-9,-h/2+1,13,17,-.25,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle="#5d2b29";ctx.beginPath();ctx.ellipse(-11,-h/2,8,9,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(-14,-h/2-2,2,0,Math.PI*2);ctx.arc(-8,-h/2-2,2,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle="#f4f0e9";ctx.lineWidth=4;ctx.beginPath();ctx.arc(-19,-h/2+4,17,.7,Math.PI*1.7);ctx.stroke();
+      ctx.save();
+      ctx.translate(-18,-h/2-1-Math.sin(runPhase)*2);
+      ctx.rotate(running ? Math.sin(runPhase)*.05 : -.04);
+      ctx.drawImage(monkeyPopImage,-23,-31,46,46);
+      ctx.restore();
     }
   } else {
     ctx.shadowColor="#7557ff"; ctx.shadowBlur=18;
