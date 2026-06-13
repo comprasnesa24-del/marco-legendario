@@ -46,6 +46,10 @@ const playerRun2Image = new Image();
 playerRun2Image.src = "character-run2.png";
 const monkeyRun2Image = new Image();
 monkeyRun2Image.src = "character-monkey-run2.png";
+const world3JacketImage = new Image();
+world3JacketImage.src = "world3-jacket.png";
+const world3JacketRun2Image = new Image();
+world3JacketRun2Image.src = "world3-jacket-run2.png";
 const motherImage = new Image();
 motherImage.src = "mother.png";
 const bossImage = new Image();
@@ -684,11 +688,20 @@ function drawPlayer() {
   const bob = running ? Math.abs(Math.sin(runPhase)) * 4 : 0;
   ctx.save(); ctx.translate(x+w/2,y+h/2-bob); ctx.scale(facing,1);
   ctx.rotate(running ? Math.sin(runPhase) * .035 : 0);
-  const activeImage = player.hasMonkey
-    ? (secondFrame ? monkeyRun2Image : monkeyPlayerImage)
-    : (secondFrame ? playerRun2Image : playerImage);
+  const wearsJacket = levelIndex === 2;
+  const activeImage = wearsJacket
+    ? (secondFrame ? world3JacketRun2Image : world3JacketImage)
+    : player.hasMonkey
+      ? (secondFrame ? monkeyRun2Image : monkeyPlayerImage)
+      : (secondFrame ? playerRun2Image : playerImage);
   if (activeImage.complete && activeImage.naturalWidth) {
     ctx.drawImage(activeImage,-w/2-14,-h/2-8,w+28,h+16);
+    if (wearsJacket && player.hasMonkey) {
+      ctx.fillStyle="#f4f0e9";ctx.beginPath();ctx.ellipse(-9,-h/2+1,13,17,-.25,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#5d2b29";ctx.beginPath();ctx.ellipse(-11,-h/2,8,9,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(-14,-h/2-2,2,0,Math.PI*2);ctx.arc(-8,-h/2-2,2,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle="#f4f0e9";ctx.lineWidth=4;ctx.beginPath();ctx.arc(-19,-h/2+4,17,.7,Math.PI*1.7);ctx.stroke();
+    }
   } else {
     ctx.shadowColor="#7557ff"; ctx.shadowBlur=18;
     roundedRect(-w/2,-h/2+8,w,h-8,17,"#7658ff");
