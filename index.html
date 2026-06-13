@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#15172b">
+    <meta name="application-name" content="Marco legendario">
+    <meta name="apple-mobile-web-app-title" content="Marco legendario">
+    <title>Marco legendario</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css?v=marco-2">
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark">M</span>
+          <div>
+            <p>El niño Legendario buscando a mamá</p>
+            <h1>Marco legendario</h1>
+          </div>
+        </div>
+        <div class="hud" aria-label="Marcador">
+          <div><span>NIVEL</span><strong id="levelLabel">1 / 4</strong></div>
+          <div><span>MONEDAS</span><strong id="coinLabel">0</strong></div>
+          <div><span>CAJAS</span><strong id="boxLabel">0 / 6</strong></div>
+          <div><span>ZURRONES</span><strong id="livesLabel"><i></i><i></i><i></i></strong></div>
+          <button id="soundButton" class="icon-button" type="button" aria-label="Activar o desactivar sonido">♪</button>
+        </div>
+      </header>
+
+      <section class="stage">
+        <canvas id="game" width="1280" height="720" aria-label="Juego de plataformas"></canvas>
+
+        <div id="startScreen" class="overlay visible">
+          <div class="overlay-card">
+            <p class="kicker">UNA PEQUEÑA GRAN AVENTURA</p>
+            <h2>Marco legendario<br><em>El niño Legendario buscando a mamá</em></h2>
+            <p>Todo el camino se supera con un salto normal. El mono permite alcanzar la última caja; recoge todos los puntos y cajas para descubrir el final secreto.</p>
+            <button id="startButton" class="primary-button" type="button">Empezar aventura <span>→</span></button>
+            <div class="keys">
+              <span><b>← →</b> Mover</span>
+              <span><b>ESPACIO</b> Saltar</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="messageScreen" class="overlay">
+          <div class="overlay-card compact">
+            <p id="messageKicker" class="kicker">NIVEL COMPLETADO</p>
+            <div id="storyVisual" class="story-visual"><div class="story-hair"></div><div class="story-eyes"></div><div class="story-mouth"></div><div class="story-tears"></div></div>
+            <img id="endingImage" class="ending-image" src="final-hug.png" alt="Marco abrazando a su madre">
+            <h2 id="messageTitle">¡Buen salto!</h2>
+            <p id="messageText">La siguiente aventura te espera.</p>
+            <button id="continueButton" class="primary-button" type="button">Continuar <span>→</span></button>
+          </div>
+        </div>
+
+        <div class="mobile-controls" aria-label="Controles táctiles">
+          <button data-control="left" type="button">←</button>
+          <button data-control="right" type="button">→</button>
+          <button class="jump" data-control="jump" type="button">↑</button>
+        </div>
+      </section>
+
+      <footer>
+        <p><span></span> Sigue las estrellas hasta encontrar a mamá</p>
+        <button id="restartButton" type="button">Reiniciar nivel</button>
+      </footer>
+    </main>
+    <script src="app.js?v=marco-2"></script>
+  </body>
+</html>

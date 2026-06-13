@@ -1,0 +1,10 @@
+{
+  "name": "Marco legendario",
+  "short_name": "Marco",
+  "description": "El niño Legendario buscando a mamá",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0d0e1a",
+  "theme_color": "#15172b",
+  "orientation": "landscape"
+}
