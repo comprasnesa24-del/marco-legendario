@@ -2,11 +2,16 @@
   "name": "Marco legendario",
   "short_name": "Marco",
   "description": "El niño Legendario buscando a mamá",
-  "start_url": "./",
+  "id": "/marco-legendario/",
+  "start_url": "/marco-legendario/",
+  "scope": "/marco-legendario/",
   "display": "standalone",
   "background_color": "#0d0e1a",
   "theme_color": "#15172b",
   "orientation": "landscape",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "icons": [
     {
       "src": "icon-192.png",
