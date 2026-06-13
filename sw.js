@@ -1,10 +1,10 @@
-const CACHE_NAME = "marco-legendario-v7";
+const CACHE_NAME = "marco-legendario-v8";
 const BASE = "/marco-legendario/";
 const CORE_ASSETS = [
   BASE,
   `${BASE}index.html`,
-  `${BASE}styles.css?v=marco-7`,
-  `${BASE}app.js?v=marco-7`,
+  `${BASE}styles.css?v=marco-8`,
+  `${BASE}app.js?v=marco-8`,
   `${BASE}manifest.json`,
   `${BASE}icon-192.png`,
   `${BASE}icon-512.png`,

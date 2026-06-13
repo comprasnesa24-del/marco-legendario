@@ -12,7 +12,6 @@ const messageText = document.querySelector("#messageText");
 const storyVisual = document.querySelector("#storyVisual");
 const endingImage = document.querySelector("#endingImage");
 const messageCard = messageScreen.querySelector(".overlay-card");
-const stage = document.querySelector(".stage");
 
 const W = canvas.width;
 const H = canvas.height;
@@ -630,7 +629,7 @@ document.querySelectorAll("[data-control]").forEach(button => {
   button.addEventListener("pointerup", () => keys[control]=false);
   button.addEventListener("pointercancel", () => keys[control]=false);
 });
-stage.addEventListener("pointerdown", e => {
+document.addEventListener("pointerdown", e => {
   if (e.pointerType === "mouse" || e.target.closest("button") || state !== "playing") return;
   e.preventDefault();
   keys.jump = true;
