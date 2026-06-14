@@ -319,17 +319,21 @@ footer button { padding: 8px 12px; font-size: 11px; }
   }
 
   .stage {
-    width: var(--landscape-stage-width, min(100vw, 177.7778dvh));
-    max-width: 100%;
+    width: 100vw;
+    height: var(--app-height, 100dvh);
     border: 0;
     border-radius: 0;
     box-shadow: none;
   }
 
   canvas {
-    width: 100%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100vw, calc(var(--app-height, 100dvh) * 16 / 9));
     height: auto;
     aspect-ratio: 16 / 9;
+    transform: translate(-50%, -50%);
   }
 
   .mobile-controls {

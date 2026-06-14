@@ -768,7 +768,6 @@ function syncMobileViewport() {
   const width = Math.max(viewport?.width || 0, document.documentElement.clientWidth, window.innerWidth);
   const height = Math.max(viewport?.height || 0, document.documentElement.clientHeight, window.innerHeight);
   document.documentElement.style.setProperty("--app-height", `${Math.round(height)}px`);
-  document.documentElement.style.setProperty("--landscape-stage-width", `${Math.round(Math.min(width, height * 16 / 9))}px`);
 }
 
 syncMobileViewport();
