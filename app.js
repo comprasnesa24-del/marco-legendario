@@ -775,6 +775,10 @@ addEventListener("resize", syncMobileViewport);
 addEventListener("orientationchange", syncMobileViewport);
 window.visualViewport?.addEventListener("resize", syncMobileViewport);
 
+document.addEventListener("contextmenu", event => event.preventDefault());
+document.addEventListener("selectstart", event => event.preventDefault());
+document.addEventListener("dragstart", event => event.preventDefault());
+
 addEventListener("keydown", e => setKey(e,true));
 addEventListener("keyup", e => setKey(e,false));
 document.querySelectorAll("[data-control]").forEach(button => {

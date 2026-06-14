@@ -12,6 +12,13 @@
 
 * { box-sizing: border-box; }
 
+html, body, .game-shell, .stage, .mobile-controls, button, canvas {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+
 body {
   margin: 0;
   min-width: 320px;
