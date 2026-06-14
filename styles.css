@@ -243,19 +243,20 @@ footer button { padding: 8px 12px; font-size: 11px; }
     pointer-events: none;
   }
   .mobile-controls button {
-    width: 82px;
-    height: 82px;
-    border: 2px solid #ffffff66;
+    width: 104px;
+    height: 104px;
+    border: 2px solid #ffffff52;
     border-radius: 50%;
     color: white;
-    background: #17192ed8;
-    box-shadow: 0 8px 24px #0007;
-    font-size: 32px;
+    background: #17192e48;
+    box-shadow: 0 5px 16px #0003;
+    backdrop-filter: blur(2px);
+    font-size: 38px;
     pointer-events: auto;
     touch-action: none;
   }
-  .mobile-controls .jump { margin-left: auto; background: #7557ffcc; }
-  .mobile-controls .fire { margin-left: auto; background: #d69c16dd; }
+  .mobile-controls .jump { margin-left: auto; background: #7557ff52; }
+  .mobile-controls .fire { margin-left: auto; background: #d69c1652; }
   .mobile-controls .fire + .jump { margin-left: 0; }
   .mobile-controls .fire { position: relative; }
   .mobile-controls .fire strong {
@@ -348,8 +349,8 @@ footer button { padding: 8px 12px; font-size: 11px; }
   }
 
   .mobile-controls button {
-    width: clamp(68px, 13dvh, 84px);
-    height: clamp(68px, 13dvh, 84px);
+    width: clamp(86px, 18dvh, 112px);
+    height: clamp(86px, 18dvh, 112px);
   }
 
   .overlay { padding: 12px; }
