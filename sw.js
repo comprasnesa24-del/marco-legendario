@@ -1,11 +1,12 @@
-const CACHE_NAME = "marco-legendario-v20";
+const CACHE_NAME = "marco-legendario-v21";
 const BASE = new URL("./", self.location.href).pathname;
 const CORE_ASSETS = [
   BASE,
   `${BASE}index.html`,
-  `${BASE}styles.css?v=marco-20`,
-  `${BASE}app.js?v=marco-20`,
+  `${BASE}styles.css?v=marco-21`,
+  `${BASE}app.js?v=marco-21`,
   `${BASE}ending-video.mp4`,
+  `${BASE}perfect-ending-video.mp4`,
   `${BASE}intro-art-v2.jpg`,
   `${BASE}world3-jacket.png`,
   `${BASE}world3-jacket-run2.png`,

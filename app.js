@@ -344,6 +344,8 @@ function completeLevel() {
     introMusic.pause();
     introMusicButton.classList.remove("playing");
     introMusicButton.textContent = "♪ Escuchar canción";
+    endingVideo.src = perfectGame ? "perfect-ending-video.mp4" : "ending-video.mp4";
+    endingVideo.load();
     endingVideo.currentTime = 0;
     endingVideo.play().catch(() => {});
   }
