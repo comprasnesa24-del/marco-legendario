@@ -192,7 +192,18 @@ function updateHud() {
   livesLabel.innerHTML = "<i></i>".repeat(Math.max(0, lives));
 }
 
+async function enterGameFullscreen() {
+  try {
+    if (!document.fullscreenElement) await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+  } catch {}
+  try {
+    await screen.orientation?.lock?.("landscape");
+  } catch {}
+  syncMobileViewport();
+}
+
 function startGame() {
+  enterGameFullscreen();
   lives = 3; coins = 0; companionUnlocked = false; perfectLevels=[false,false,false,false]; loadLevel(0); state = "playing";
   messageCard.classList.remove("victory");
   startScreen.classList.remove("visible");
@@ -774,6 +785,7 @@ syncMobileViewport();
 addEventListener("resize", syncMobileViewport);
 addEventListener("orientationchange", syncMobileViewport);
 window.visualViewport?.addEventListener("resize", syncMobileViewport);
+document.addEventListener("fullscreenchange", syncMobileViewport);
 
 document.addEventListener("contextmenu", event => event.preventDefault());
 document.addEventListener("selectstart", event => event.preventDefault());
