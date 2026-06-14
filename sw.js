@@ -1,5 +1,5 @@
 const CACHE_NAME = "marco-legendario-v15";
-const BASE = "/marco-legendario/";
+const BASE = new URL("./", self.location.href).pathname;
 const CORE_ASSETS = [
   BASE,
   `${BASE}index.html`,
