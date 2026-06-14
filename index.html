@@ -10,7 +10,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-    <link rel="stylesheet" href="styles.css?v=marco-19">
+    <link rel="stylesheet" href="styles.css?v=marco-20">
   </head>
   <body>
     <main class="game-shell">
@@ -57,7 +57,7 @@
           <div class="overlay-card compact">
             <p id="messageKicker" class="kicker">NIVEL COMPLETADO</p>
             <div id="storyVisual" class="story-visual"><div class="story-hair"></div><div class="story-eyes"></div><div class="story-mouth"></div><div class="story-tears"></div></div>
-            <img id="endingImage" class="ending-image" src="final-hug.png" alt="Marco abrazando a su madre">
+            <video id="endingVideo" class="ending-video" src="ending-video.mp4" controls playsinline preload="metadata"></video>
             <h2 id="messageTitle">¡Buen salto!</h2>
             <p id="messageText">La siguiente aventura te espera.</p>
             <button id="continueButton" class="primary-button" type="button">Continuar <span>→</span></button>
@@ -78,7 +78,7 @@
       </footer>
     </main>
     <audio id="introMusic" src="intro-marco.mp3" preload="metadata" loop></audio>
-    <script src="app.js?v=marco-19"></script>
+    <script src="app.js?v=marco-20"></script>
     <script>
       if ("serviceWorker" in navigator) {
         addEventListener("load", () => {

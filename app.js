@@ -12,7 +12,7 @@ const messageKicker = document.querySelector("#messageKicker");
 const messageTitle = document.querySelector("#messageTitle");
 const messageText = document.querySelector("#messageText");
 const storyVisual = document.querySelector("#storyVisual");
-const endingImage = document.querySelector("#endingImage");
+const endingVideo = document.querySelector("#endingVideo");
 const messageCard = messageScreen.querySelector(".overlay-card");
 const introMusic = document.querySelector("#introMusic");
 const introMusicButton = document.querySelector("#introMusicButton");
@@ -204,6 +204,8 @@ async function enterGameFullscreen() {
 
 function startGame() {
   enterGameFullscreen();
+  endingVideo.pause();
+  endingVideo.currentTime = 0;
   lives = 3; coins = 0; companionUnlocked = false; perfectLevels=[false,false,false,false]; loadLevel(0); state = "playing";
   messageCard.classList.remove("victory");
   startScreen.classList.remove("visible");
@@ -326,7 +328,6 @@ function completeLevel() {
   nextLevelIndex = state === "complete" ? levelIndex + 1 : null;
   const completedName = levels[levelIndex].name;
   const perfectGame = state === "won" && perfectLevels.every(Boolean);
-  endingImage.src = perfectGame ? "perfect-ending.png" : "final-hug.png";
   showMessage(
     perfectGame ? "FINAL SECRETO" : state === "won" ? "POR FIN JUNTOS" : `NIVEL ${levelIndex + 1} COMPLETADO`,
     perfectGame ? "¡SOIS LOS REYES DEL JUEGO!" : state === "won" ? "¡Encontraste a mamá!" : "¡El viaje continúa!",
@@ -339,6 +340,13 @@ function completeLevel() {
   );
   messageCard.classList.toggle("victory",state === "won");
   storyVisual.className = `story-visual sad-${Math.min(3,levelIndex+1)}`;
+  if (state === "won") {
+    introMusic.pause();
+    introMusicButton.classList.remove("playing");
+    introMusicButton.textContent = "♪ Escuchar canción";
+    endingVideo.currentTime = 0;
+    endingVideo.play().catch(() => {});
+  }
 }
 
 function update(dt) {
