@@ -427,7 +427,7 @@ function update(dt) {
       updateHud();
     }
   });
-  runPhase += Math.abs(player.vx) * .08;
+  runPhase += Math.abs(player.vx) * .11;
   if (monkeyPop) { monkeyPop.y -= 1.2; monkeyPop.life--; if (monkeyPop.life<=0) monkeyPop=null; }
 
   if (!level.checkpoint.active && player.x > level.checkpoint.x) {
@@ -754,6 +754,7 @@ function drawPlayer() {
       : (secondFrame ? playerRun2Image : playerImage);
   if (activeImage.complete && activeImage.naturalWidth) {
     ctx.drawImage(activeImage,-w/2-14,-h/2-8,w+28,h+16);
+    if (running) drawRunningLegs(w,h,runPhase);
     if (wearsJacket && player.hasMonkey) {
       ctx.save();
       ctx.translate(-18,-h/2-1-Math.sin(runPhase)*2);
@@ -769,6 +770,47 @@ function drawPlayer() {
     ctx.fillStyle="#221832"; ctx.fillRect(5,-h/2+6,5,6); ctx.fillRect(16,-h/2+6,5,6);
     ctx.fillStyle="#ff587d"; ctx.fillRect(-w/2-5,h/2-10,24,10); ctx.fillRect(8,h/2-10,24,10);
   }
+  ctx.restore();
+}
+
+function drawRunningLegs(w,h,phase) {
+  const stride = Math.sin(phase * 1.35) >= 0 ? 1 : -1;
+  drawRunLeg(-8, 9, stride, "#2f63c7", "#1c3f92", true);
+  drawRunLeg(5, 10, -stride, "#2655b3", "#18357b", false);
+}
+
+function drawRunLeg(hipX, hipY, stride, fill, shadow, front) {
+  const kneeX = hipX + stride * 9;
+  const kneeY = hipY + (front ? 16 : 14);
+  const footX = hipX + stride * 23;
+  const footY = 39;
+  ctx.save();
+  ctx.globalAlpha = front ? .9 : .72;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = shadow;
+  ctx.lineWidth = 11;
+  ctx.beginPath();
+  ctx.moveTo(hipX, hipY);
+  ctx.lineTo(kneeX, kneeY);
+  ctx.lineTo(footX, footY - (front ? 1 : 4));
+  ctx.stroke();
+  ctx.strokeStyle = fill;
+  ctx.lineWidth = 8;
+  ctx.beginPath();
+  ctx.moveTo(hipX, hipY);
+  ctx.lineTo(kneeX, kneeY);
+  ctx.lineTo(footX, footY - (front ? 1 : 4));
+  ctx.stroke();
+  ctx.translate(footX, footY);
+  ctx.rotate(stride * .22);
+  ctx.fillStyle = "#15182a";
+  ctx.strokeStyle = "#ffffffc0";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(stride * 3, 0, 12, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
   ctx.restore();
 }
 
