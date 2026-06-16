@@ -742,19 +742,23 @@ function draw() {
 function drawPlayer() {
   const {x,y,w,h,facing}=player;
   const running = player.grounded && Math.abs(player.vx) > 1;
-  const secondFrame = running && Math.floor(runPhase / 2.2) % 2;
   const bob = running ? Math.abs(Math.sin(runPhase)) * 4 : 0;
   ctx.save(); ctx.translate(x+w/2,y+h/2-bob); ctx.scale(facing,1);
   ctx.rotate(running ? Math.sin(runPhase) * .035 : 0);
   const wearsJacket = levelIndex === 2;
   const activeImage = wearsJacket
-    ? (secondFrame ? world3JacketRun2Image : world3JacketImage)
+    ? (running ? world3JacketRun2Image : world3JacketImage)
     : player.hasMonkey
-      ? (secondFrame ? monkeyRun2Image : monkeyPlayerImage)
-      : (secondFrame ? playerRun2Image : playerImage);
+      ? (running ? monkeyRun2Image : monkeyPlayerImage)
+      : (running ? playerRun2Image : playerImage);
   if (activeImage.complete && activeImage.naturalWidth) {
-    ctx.drawImage(activeImage,-w/2-14,-h/2-8,w+28,h+16);
-    if (running) drawRunningLegs(w,h,runPhase);
+    if (running) {
+      drawRunningLegs(w,h,runPhase);
+      drawRunningUpperBody(activeImage,w,h);
+      drawRunningWaist(w,h);
+    } else {
+      ctx.drawImage(activeImage,-w/2-14,-h/2-8,w+28,h+16);
+    }
     if (wearsJacket && player.hasMonkey) {
       ctx.save();
       ctx.translate(-18,-h/2-1-Math.sin(runPhase)*2);
@@ -773,42 +777,73 @@ function drawPlayer() {
   ctx.restore();
 }
 
-function drawRunningLegs(w,h,phase) {
-  const stride = Math.sin(phase * 1.35) >= 0 ? 1 : -1;
-  drawRunLeg(-8, 9, stride, "#2f63c7", "#1c3f92", true);
-  drawRunLeg(5, 10, -stride, "#2655b3", "#18357b", false);
+function drawRunningUpperBody(image,w,h) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(-w/2-18,-h/2-12,w+36,h*.68);
+  ctx.clip();
+  ctx.drawImage(image,-w/2-14,-h/2-8,w+28,h+16);
+  ctx.restore();
 }
 
-function drawRunLeg(hipX, hipY, stride, fill, shadow, front) {
-  const kneeX = hipX + stride * 9;
-  const kneeY = hipY + (front ? 16 : 14);
-  const footX = hipX + stride * 23;
-  const footY = 39;
+function drawRunningWaist(w,h) {
   ctx.save();
-  ctx.globalAlpha = front ? .9 : .72;
+  ctx.translate(0,8);
+  roundedRect(-16,-4,32,12,5,"#2a59bd");
+  ctx.fillStyle = "#17192e";
+  ctx.fillRect(-14,-5,28,3);
+  ctx.fillStyle = "#d8dbe7";
+  ctx.fillRect(-3,-6,8,5);
+  ctx.restore();
+}
+
+function drawRunningLegs(w,h,phase) {
+  const frames = [
+    { front: { hip:-5, knee:10, foot:30, lift:0 }, back: { hip:6, knee:-8, foot:-27, lift:3 } },
+    { front: { hip:-4, knee:15, foot:20, lift:2 }, back: { hip:5, knee:-12, foot:-18, lift:8 } },
+    { front: { hip:-2, knee:7, foot:4, lift:9 }, back: { hip:4, knee:11, foot:-8, lift:3 } },
+    { front: { hip:5, knee:-10, foot:-30, lift:0 }, back: { hip:-6, knee:8, foot:27, lift:3 } },
+    { front: { hip:4, knee:-15, foot:-20, lift:2 }, back: { hip:-5, knee:12, foot:18, lift:8 } },
+    { front: { hip:2, knee:-7, foot:-4, lift:9 }, back: { hip:-4, knee:-11, foot:8, lift:3 } }
+  ];
+  const frame = frames[Math.floor(phase * 1.7) % frames.length];
+  drawRunLeg(frame.back, "#2450aa", "#17316f", false);
+  drawRunLeg(frame.front, "#3269d6", "#1d4191", true);
+}
+
+function drawRunLeg(pose, fill, shadow, front) {
+  const hipX = pose.hip;
+  const hipY = 9;
+  const kneeX = pose.knee;
+  const kneeY = front ? 25 : 23;
+  const footX = pose.foot;
+  const footY = 40 - pose.lift;
+  const stride = Math.sign(footX - hipX) || 1;
+  ctx.save();
+  ctx.globalAlpha = front ? .96 : .78;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   ctx.strokeStyle = shadow;
-  ctx.lineWidth = 11;
+  ctx.lineWidth = front ? 13 : 11;
   ctx.beginPath();
   ctx.moveTo(hipX, hipY);
   ctx.lineTo(kneeX, kneeY);
-  ctx.lineTo(footX, footY - (front ? 1 : 4));
+  ctx.lineTo(footX, footY);
   ctx.stroke();
   ctx.strokeStyle = fill;
-  ctx.lineWidth = 8;
+  ctx.lineWidth = front ? 9 : 8;
   ctx.beginPath();
   ctx.moveTo(hipX, hipY);
   ctx.lineTo(kneeX, kneeY);
-  ctx.lineTo(footX, footY - (front ? 1 : 4));
+  ctx.lineTo(footX, footY);
   ctx.stroke();
   ctx.translate(footX, footY);
-  ctx.rotate(stride * .22);
+  ctx.rotate(stride * .18);
   ctx.fillStyle = "#15182a";
   ctx.strokeStyle = "#ffffffc0";
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.ellipse(stride * 3, 0, 12, 5, 0, 0, Math.PI * 2);
+  ctx.ellipse(stride * 4, 0, 13, 5, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
   ctx.restore();
