@@ -23,6 +23,7 @@ const FLOOR = 610;
 const keys = { left: false, right: false, jump: false, fire: false };
 let levelIndex = 0;
 let lives = 3;
+let infiniteLives = false;
 let coins = 0;
 let state = "menu";
 let cameraX = 0;
@@ -160,7 +161,17 @@ function loadLevel(index) {
     if (enemyIndex % 2 === 0) level.enemies.push([x + 25, y - 38, Math.max(70,w - 90)]);
   });
   level.moving = level.moving.map((moving) => ({ data: moving, lastX: moving[0], x: moving[0] }));
-  level.boxes = level.boxes.map(([x,y,type], boxIndex) => ({ x, y, type, used: false, bump: 0, isLast: boxIndex === level.boxes.length - 1, secretJumps: 0 }));
+  level.boxes = level.boxes.map(([x,y,type], boxIndex) => ({
+    x,
+    y,
+    type,
+    used: false,
+    bump: 0,
+    isLast: boxIndex === level.boxes.length - 1,
+    secretJumps: 0,
+    infiniteLifeJumps: 0,
+    firstBananaBox: levelIndex === 0 && boxIndex === 0 && type === "bananas"
+  }));
   level.coins = level.coins.map(([x,y]) => ({ x, y, taken: false, phase: Math.random() * 6 }));
   const enemyStats = [
     { type:"cockroach", speed:2.1, hp:1, w:48, h:30 },
@@ -189,7 +200,9 @@ function updateHud() {
   bananaLabel.textContent = bananaAmmo;
   mobileBananaLabel.textContent = bananaAmmo;
   boxLabel.textContent = `${level.openedBoxes} / ${requiredBoxes.length}`;
-  livesLabel.innerHTML = "<i></i>".repeat(Math.max(0, lives));
+  livesLabel.innerHTML = infiniteLives
+    ? `<i></i><b class="life-count">∞</b>`
+    : `<i></i><b class="life-count">x${Math.max(0, lives)}</b>`;
 }
 
 async function enterGameFullscreen() {
@@ -206,7 +219,7 @@ function startGame() {
   enterGameFullscreen();
   endingVideo.pause();
   endingVideo.currentTime = 0;
-  lives = 3; coins = 0; companionUnlocked = false; perfectLevels=[false,false,false,false]; loadLevel(0); state = "playing";
+  lives = 3; infiniteLives = false; coins = 0; companionUnlocked = false; perfectLevels=[false,false,false,false]; loadLevel(0); state = "playing";
   messageCard.classList.remove("victory");
   startScreen.classList.remove("visible");
   messageScreen.classList.remove("visible");
@@ -277,7 +290,7 @@ function beep(frequency, duration = .08) {
 }
 
 function respawn() {
-  lives--;
+  if (!infiniteLives) lives--;
   beep(130, .3);
   updateHud();
   if (lives <= 0) {
@@ -392,6 +405,18 @@ function update(dt) {
         beep(500+p.box.secretJumps*35,.08);
         if (p.box.secretJumps >= 10) secretWarp = true;
       }
+      if (p.box?.firstBananaBox && player.hasMonkey && landedAfterJump && !infiniteLives && p.box.infiniteLifeJumps < 10) {
+        p.box.infiniteLifeJumps++;
+        beep(420+p.box.infiniteLifeJumps*45,.08);
+        if (p.box.infiniteLifeJumps >= 10) {
+          infiniteLives = true;
+          lives = Math.max(lives, 3);
+          bananaRefillPop = { life: 110 };
+          for (let i=0;i<28;i++) particles.push({x:p.box.x+28,y:p.box.y,vx:Math.random()*10-5,vy:Math.random()*-8,life:60,type:"satchel"});
+          beep(1100,.45);
+          updateHud();
+        }
+      }
     }
   });
   if (secretWarp) {
@@ -416,7 +441,7 @@ function update(dt) {
         beep(760,.25);
         for (let i=0;i<10;i++) particles.push({x:box.x+28,y:box.y,vx:Math.random()*8-4,vy:Math.random()*-7,life:45,type:"banana"});
       } else if (box.isLast) {
-        lives = Math.min(3,lives+1);
+        lives++;
         beep(980,.3);
         particles.push({x:box.x+8,y:box.y-10,vx:0,vy:-4,life:55,type:"satchel"});
       } else {
@@ -639,6 +664,13 @@ function draw() {
     ctx.textAlign = "center"; ctx.fillText(box.used ? "·" : box.checkpointRecovery ? "🐒" : box.type === "bananas" ? "🍌" : box.isLast ? "↑↑" : "?",box.x+28,by+40); ctx.textAlign = "left";
     if(box.isLast && levelIndex===0 && box.secretJumps>0 && box.secretJumps<10){
       ctx.fillStyle="#fff";ctx.font="800 12px DM Sans";ctx.textAlign="center";ctx.fillText(`${box.secretJumps}/10`,box.x+28,by-10);ctx.textAlign="left";
+    }
+    if(box.firstBananaBox && box.infiniteLifeJumps>0){
+      ctx.fillStyle=infiniteLives?"#ffd45c":"#fff";
+      ctx.font=infiniteLives?"900 13px DM Sans":"800 12px DM Sans";
+      ctx.textAlign="center";
+      ctx.fillText(infiniteLives ? "∞ VIDAS" : `${box.infiniteLifeJumps}/10`,box.x+28,by-10);
+      ctx.textAlign="left";
     }
   });
   if (monkeyPop && monkeyPopImage.complete && monkeyPopImage.naturalWidth) {
