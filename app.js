@@ -20,6 +20,9 @@ const introMusicButton = document.querySelector("#introMusicButton");
 const W = canvas.width;
 const H = canvas.height;
 const FLOOR = 610;
+const RUN_FRAME_COUNT = 8;
+const RUN_FRAME_W = 172;
+const RUN_FRAME_H = 188;
 const keys = { left: false, right: false, jump: false, fire: false };
 let levelIndex = 0;
 let lives = 3;
@@ -47,6 +50,12 @@ const playerRun2Image = new Image();
 playerRun2Image.src = "character-run2.png";
 const monkeyRun2Image = new Image();
 monkeyRun2Image.src = "character-monkey-run2.png";
+const playerRunSheetImage = new Image();
+playerRunSheetImage.src = "character-run-sheet.png";
+const monkeyRunSheetImage = new Image();
+monkeyRunSheetImage.src = "character-monkey-run-sheet.png";
+const world3JacketRunSheetImage = new Image();
+world3JacketRunSheetImage.src = "world3-jacket-run-sheet.png";
 const world3JacketImage = new Image();
 world3JacketImage.src = "world3-jacket.png";
 const world3JacketRun2Image = new Image();
@@ -452,7 +461,7 @@ function update(dt) {
       updateHud();
     }
   });
-  runPhase += Math.abs(player.vx) * .11;
+  runPhase += Math.abs(player.vx) * .075;
   if (monkeyPop) { monkeyPop.y -= 1.2; monkeyPop.life--; if (monkeyPop.life<=0) monkeyPop=null; }
 
   if (!level.checkpoint.active && player.x > level.checkpoint.x) {
@@ -778,19 +787,28 @@ function drawPlayer() {
   ctx.save(); ctx.translate(x+w/2,y+h/2-bob); ctx.scale(facing,1);
   ctx.rotate(running ? Math.sin(runPhase) * .035 : 0);
   const wearsJacket = levelIndex === 2;
+  const runSheet = wearsJacket
+    ? world3JacketRunSheetImage
+    : player.hasMonkey
+      ? monkeyRunSheetImage
+      : playerRunSheetImage;
   const activeImage = wearsJacket
     ? (running ? world3JacketRun2Image : world3JacketImage)
     : player.hasMonkey
       ? (running ? monkeyRun2Image : monkeyPlayerImage)
       : (running ? playerRun2Image : playerImage);
-  if (activeImage.complete && activeImage.naturalWidth) {
-    if (running) {
-      drawRunningLegs(w,h,runPhase);
-      drawRunningUpperBody(activeImage,w,h);
-      drawRunningWaist(w,h);
-    } else {
-      ctx.drawImage(activeImage,-w/2-14,-h/2-8,w+28,h+16);
+  if (running && runSheet.complete && runSheet.naturalWidth) {
+    const frame = Math.floor(runPhase * .55) % RUN_FRAME_COUNT;
+    ctx.drawImage(runSheet,frame*RUN_FRAME_W,0,RUN_FRAME_W,RUN_FRAME_H,-w/2-14,-h/2-8,w+28,h+16);
+    if (wearsJacket && player.hasMonkey) {
+      ctx.save();
+      ctx.translate(-18,-h/2-1-Math.sin(runPhase)*2);
+      ctx.rotate(Math.sin(runPhase)*.05);
+      ctx.drawImage(monkeyPopImage,-23,-31,46,46);
+      ctx.restore();
     }
+  } else if (activeImage.complete && activeImage.naturalWidth) {
+      ctx.drawImage(activeImage,-w/2-14,-h/2-8,w+28,h+16);
     if (wearsJacket && player.hasMonkey) {
       ctx.save();
       ctx.translate(-18,-h/2-1-Math.sin(runPhase)*2);
@@ -806,78 +824,6 @@ function drawPlayer() {
     ctx.fillStyle="#221832"; ctx.fillRect(5,-h/2+6,5,6); ctx.fillRect(16,-h/2+6,5,6);
     ctx.fillStyle="#ff587d"; ctx.fillRect(-w/2-5,h/2-10,24,10); ctx.fillRect(8,h/2-10,24,10);
   }
-  ctx.restore();
-}
-
-function drawRunningUpperBody(image,w,h) {
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(-w/2-18,-h/2-12,w+36,h*.68);
-  ctx.clip();
-  ctx.drawImage(image,-w/2-14,-h/2-8,w+28,h+16);
-  ctx.restore();
-}
-
-function drawRunningWaist(w,h) {
-  ctx.save();
-  ctx.translate(0,8);
-  roundedRect(-16,-4,32,12,5,"#2a59bd");
-  ctx.fillStyle = "#17192e";
-  ctx.fillRect(-14,-5,28,3);
-  ctx.fillStyle = "#d8dbe7";
-  ctx.fillRect(-3,-6,8,5);
-  ctx.restore();
-}
-
-function drawRunningLegs(w,h,phase) {
-  const frames = [
-    { front: { hip:-5, knee:10, foot:30, lift:0 }, back: { hip:6, knee:-8, foot:-27, lift:3 } },
-    { front: { hip:-4, knee:15, foot:20, lift:2 }, back: { hip:5, knee:-12, foot:-18, lift:8 } },
-    { front: { hip:-2, knee:7, foot:4, lift:9 }, back: { hip:4, knee:11, foot:-8, lift:3 } },
-    { front: { hip:5, knee:-10, foot:-30, lift:0 }, back: { hip:-6, knee:8, foot:27, lift:3 } },
-    { front: { hip:4, knee:-15, foot:-20, lift:2 }, back: { hip:-5, knee:12, foot:18, lift:8 } },
-    { front: { hip:2, knee:-7, foot:-4, lift:9 }, back: { hip:-4, knee:-11, foot:8, lift:3 } }
-  ];
-  const frame = frames[Math.floor(phase * 1.7) % frames.length];
-  drawRunLeg(frame.back, "#2450aa", "#17316f", false);
-  drawRunLeg(frame.front, "#3269d6", "#1d4191", true);
-}
-
-function drawRunLeg(pose, fill, shadow, front) {
-  const hipX = pose.hip;
-  const hipY = 9;
-  const kneeX = pose.knee;
-  const kneeY = front ? 25 : 23;
-  const footX = pose.foot;
-  const footY = 40 - pose.lift;
-  const stride = Math.sign(footX - hipX) || 1;
-  ctx.save();
-  ctx.globalAlpha = front ? .96 : .78;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = shadow;
-  ctx.lineWidth = front ? 13 : 11;
-  ctx.beginPath();
-  ctx.moveTo(hipX, hipY);
-  ctx.lineTo(kneeX, kneeY);
-  ctx.lineTo(footX, footY);
-  ctx.stroke();
-  ctx.strokeStyle = fill;
-  ctx.lineWidth = front ? 9 : 8;
-  ctx.beginPath();
-  ctx.moveTo(hipX, hipY);
-  ctx.lineTo(kneeX, kneeY);
-  ctx.lineTo(footX, footY);
-  ctx.stroke();
-  ctx.translate(footX, footY);
-  ctx.rotate(stride * .18);
-  ctx.fillStyle = "#15182a";
-  ctx.strokeStyle = "#ffffffc0";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.ellipse(stride * 4, 0, 13, 5, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
   ctx.restore();
 }
 
