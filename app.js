@@ -375,7 +375,7 @@ function completeLevel() {
 
 function update(dt) {
   if (state !== "playing") return;
-  const speed = player.hasMonkey ? 9.5 : 6.5;
+  const speed = player.hasMonkey ? 7.4 : 5.0;
   player.vx += ((keys.right ? speed : 0) - (keys.left ? speed : 0) - player.vx) * .22;
   if (keys.left) player.facing = -1;
   if (keys.right) player.facing = 1;
