@@ -848,8 +848,9 @@ function setKey(event, pressed) {
 
 function syncMobileViewport() {
   const viewport = window.visualViewport;
-  const width = Math.max(viewport?.width || 0, document.documentElement.clientWidth, window.innerWidth);
-  const height = Math.max(viewport?.height || 0, document.documentElement.clientHeight, window.innerHeight);
+  const width = viewport?.width || window.innerWidth || document.documentElement.clientWidth;
+  const height = viewport?.height || window.innerHeight || document.documentElement.clientHeight;
+  document.documentElement.style.setProperty("--app-width", `${Math.round(width)}px`);
   document.documentElement.style.setProperty("--app-height", `${Math.round(height)}px`);
 }
 

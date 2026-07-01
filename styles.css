@@ -19,6 +19,13 @@ html, body, .game-shell, .stage, .mobile-controls, button, canvas {
   -webkit-user-drag: none;
 }
 
+html {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  touch-action: manipulation;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -28,9 +35,14 @@ body {
     radial-gradient(circle at 50% -20%, #3a286a 0, transparent 42%),
     #0d0e1a;
   font-family: "DM Sans", sans-serif;
+  overscroll-behavior: none;
 }
 
 button { font: inherit; }
+
+.rotate-notice {
+  display: none;
+}
 
 .game-shell {
   width: min(1460px, calc(100% - 32px));
@@ -245,6 +257,7 @@ footer button { padding: 8px 12px; font-size: 11px; }
     gap: 10px;
     pointer-events: none;
   }
+  .overlay.visible ~ .mobile-controls { display: none; }
   .mobile-controls button {
     width: 104px;
     height: 104px;
@@ -280,6 +293,52 @@ footer button { padding: 8px 12px; font-size: 11px; }
   footer { padding: 10px 14px; }
 }
 
+@media (orientation: portrait) and (pointer: coarse) {
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .game-shell {
+    filter: blur(2px) brightness(.55);
+    pointer-events: none;
+  }
+
+  .rotate-notice {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 28px;
+    color: white;
+    background: radial-gradient(circle at 50% 10%, #3a286a 0, #101225 55%, #070812 100%);
+    text-align: center;
+  }
+
+  .rotate-notice div {
+    display: grid;
+    gap: 14px;
+    max-width: 320px;
+    padding: 28px 24px;
+    border: 1px solid #ffffff24;
+    border-radius: 24px;
+    background: #ffffff10;
+    box-shadow: 0 22px 60px #0008;
+  }
+
+  .rotate-notice strong {
+    font-size: clamp(32px, 11vw, 54px);
+    line-height: .95;
+  }
+
+  .rotate-notice span {
+    color: var(--muted);
+    font-size: 18px;
+  }
+}
+
 @media (orientation: landscape) and (pointer: coarse), (orientation: landscape) and (max-height: 600px) {
   html, body {
     width: 100%;
@@ -287,12 +346,16 @@ footer button { padding: 8px 12px; font-size: 11px; }
     overflow: hidden;
   }
 
-  body { min-height: var(--app-height, 100dvh); }
+  body {
+    min-height: var(--app-height, 100dvh);
+    position: fixed;
+    inset: 0;
+  }
 
   .game-shell {
     position: relative;
     display: grid;
-    width: 100%;
+    width: var(--app-width, 100vw);
     height: var(--app-height, 100dvh);
     min-height: 0;
     padding: 0;
@@ -330,21 +393,19 @@ footer button { padding: 8px 12px; font-size: 11px; }
   }
 
   .stage {
-    width: 100vw;
-    height: var(--app-height, 100dvh);
+    width: min(var(--app-width, 100vw), calc(var(--app-height, 100dvh) * 16 / 9));
+    height: min(var(--app-height, 100dvh), calc(var(--app-width, 100vw) * 9 / 16));
     border: 0;
     border-radius: 0;
     box-shadow: none;
   }
 
   canvas {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: max(100vw, calc(var(--app-height, 100dvh) * 16 / 9));
-    height: auto;
+    position: static;
+    width: 100%;
+    height: 100%;
     aspect-ratio: 16 / 9;
-    transform: translate(-50%, -50%);
+    object-fit: contain;
   }
 
   .mobile-controls {
