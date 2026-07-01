@@ -16,6 +16,8 @@ const endingVideo = document.querySelector("#endingVideo");
 const messageCard = messageScreen.querySelector(".overlay-card");
 const introMusic = document.querySelector("#introMusic");
 const introMusicButton = document.querySelector("#introMusicButton");
+const monkeyBoxSound = new Audio("monkey-box-sound.mp4");
+monkeyBoxSound.preload = "auto";
 
 const W = canvas.width;
 const H = canvas.height;
@@ -300,6 +302,12 @@ function beep(frequency, duration = .08) {
   osc.start(); osc.stop(audioContext.currentTime + duration);
 }
 
+function playMonkeyBoxSound() {
+  if (!audioEnabled) return;
+  monkeyBoxSound.currentTime = 0;
+  monkeyBoxSound.play().catch(() => {});
+}
+
 function respawn() {
   if (!infiniteLives) lives--;
   beep(130, .3);
@@ -416,6 +424,7 @@ function update(dt) {
       const landedAfterJump = !player.grounded && player.jumpsUsed > 0;
       player.y = p.y - player.h; player.vy = 0; player.grounded = true; player.jumpsUsed = 0;
       if (p.moving) player.x += p.dx;
+      if (p.box?.type === "monkey" && landedAfterJump) playMonkeyBoxSound();
       if (p.box?.isLast && levelIndex === 0 && landedAfterJump && p.box.secretJumps < 10) {
         p.box.secretJumps++;
         beep(500+p.box.secretJumps*35,.08);
@@ -449,6 +458,7 @@ function update(dt) {
       player.y = box.y + 56; player.vy = 4; box.used = true; box.bump = 12;
       if (box.countsForCompletion !== false) level.openedBoxes++;
       if (box.type === "monkey") {
+        playMonkeyBoxSound();
         player.hasMonkey = true; companionUnlocked = true; beep(880, .25);
         monkeyPop = {x:box.x-2,y:box.y-5,life:75};
         for (let i=0;i<18;i++) particles.push({x:box.x+28,y:box.y,vx:Math.random()*8-4,vy:Math.random()*-7,life:40});
