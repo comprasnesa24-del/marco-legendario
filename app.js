@@ -230,6 +230,7 @@ function startGame() {
   endingVideo.currentTime = 0;
   lives = 3; infiniteLives = false; coins = 0; companionUnlocked = false; perfectLevels=[false,false,false,false]; loadLevel(0); state = "playing";
   messageCard.classList.remove("victory");
+  messageCard.classList.remove("level-video");
   startScreen.classList.remove("visible");
   messageScreen.classList.remove("visible");
 }
@@ -350,6 +351,7 @@ function completeLevel() {
   nextLevelIndex = state === "complete" ? levelIndex + 1 : null;
   const completedName = levels[levelIndex].name;
   const perfectGame = state === "won" && perfectLevels.every(Boolean);
+  const levelVideo = state === "complete" && levelIndex === 0;
   showMessage(
     perfectGame ? "FINAL SECRETO" : state === "won" ? "POR FIN JUNTOS" : `NIVEL ${levelIndex + 1} COMPLETADO`,
     perfectGame ? "¡SOIS LOS REYES DEL JUEGO!" : state === "won" ? "¡Encontraste a mamá!" : "¡El viaje continúa!",
@@ -361,12 +363,15 @@ function completeLevel() {
     state === "won" ? "Jugar de nuevo" : "Siguiente nivel"
   );
   messageCard.classList.toggle("victory",state === "won");
+  messageCard.classList.toggle("level-video",levelVideo);
   storyVisual.className = `story-visual sad-${Math.min(3,levelIndex+1)}`;
-  if (state === "won") {
+  endingVideo.pause();
+  endingVideo.currentTime = 0;
+  if (state === "won" || levelVideo) {
     introMusic.pause();
     introMusicButton.classList.remove("playing");
     introMusicButton.textContent = "♪ Escuchar canción";
-    endingVideo.src = perfectGame ? "perfect-ending-video.mp4" : "ending-video.mp4";
+    endingVideo.src = levelVideo ? "world1-complete-video.mp4" : perfectGame ? "perfect-ending-video.mp4" : "ending-video.mp4";
     endingVideo.load();
     endingVideo.currentTime = 0;
     endingVideo.play().catch(() => {});
@@ -887,8 +892,16 @@ introMusicButton.addEventListener("click", async () => {
     introMusicButton.textContent = "♪ Escuchar canción";
   }
 });
-document.querySelector("#restartButton").addEventListener("click", () => { loadLevel(levelIndex); state="playing"; messageScreen.classList.remove("visible"); });
+document.querySelector("#restartButton").addEventListener("click", () => {
+  endingVideo.pause();
+  endingVideo.currentTime = 0;
+  messageCard.classList.remove("level-video","victory");
+  loadLevel(levelIndex); state="playing"; messageScreen.classList.remove("visible");
+});
 document.querySelector("#continueButton").addEventListener("click", () => {
+  endingVideo.pause();
+  endingVideo.currentTime = 0;
+  messageCard.classList.remove("level-video","victory");
   messageScreen.classList.remove("visible");
   if (nextLevelIndex !== null) {
     loadLevel(nextLevelIndex);

@@ -183,6 +183,8 @@ canvas {
 .ending-video { display:none; width:min(430px,100%); max-height:300px; margin:0 auto 18px; object-fit:contain; border-radius:18px; background:#000; }
 .overlay-card.victory .story-visual { display:none; }
 .overlay-card.victory .ending-video { display:block; }
+.overlay-card.level-video .story-visual { display:none; }
+.overlay-card.level-video .ending-video { display:block; }
 .overlay-card > p:not(.kicker) { max-width: 44ch; color: var(--muted); line-height: 1.6; }
 .overlay-card.compact > p:not(.kicker) { margin-inline: auto; }
 
