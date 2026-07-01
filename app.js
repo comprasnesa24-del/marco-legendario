@@ -142,7 +142,11 @@ function prepareBoxPlatforms(raw) {
   raw.boxes = raw.boxes.map(([x,y,type], boxIndex, boxes) => {
     const isLast = boxIndex === boxes.length - 1;
     const raisedY = isLast ? y : Math.max(185,y-55);
-    if (!isLast) raw.platforms.push([x-48,raisedY+150,152,22]);
+    const helperY = raisedY + 150;
+    const alreadySupported = raw.platforms.some(([px,py,pw]) =>
+      Math.abs(py - helperY) < 42 && px < x + 104 && px + pw > x - 48
+    );
+    if (!isLast && !alreadySupported) raw.platforms.push([x-48,helperY,152,22]);
     return [x,raisedY,type];
   });
 }
@@ -158,6 +162,24 @@ function ensureBasicJumpRoute(raw) {
     if (!covered) raw.platforms.push([x, y, 220, 22]);
     step++;
   }
+  raw.platforms = raw.platforms
+    .sort((a,b) => a[0] - b[0] || a[1] - b[1])
+    .filter((platform, index, platforms) => !platforms.some((other, otherIndex) =>
+      otherIndex < index &&
+      Math.abs(other[1] - platform[1]) < 34 &&
+      other[0] < platform[0] + platform[2] &&
+      other[0] + other[2] > platform[0]
+    ));
+}
+
+function spreadEnemies(raw) {
+  raw.enemies = raw.enemies
+    .sort((a,b) => a[0] - b[0])
+    .filter((enemy, index, enemies) => !enemies.some((other, otherIndex) =>
+      otherIndex < index &&
+      Math.abs(other[0] - enemy[0]) < 260 &&
+      Math.abs(other[1] - enemy[1]) < 80
+    ));
 }
 
 function loadLevel(index) {
@@ -170,8 +192,12 @@ function loadLevel(index) {
   ensureBasicJumpRoute(level);
   const extraEnemyPlatforms = level.platforms.filter(([,y,w,h]) => h <= 30 && w >= 170 && y >= 340);
   extraEnemyPlatforms.forEach(([x,y,w], enemyIndex) => {
-    if (enemyIndex % 2 === 0) level.enemies.push([x + 25, y - 38, Math.max(70,w - 90)]);
+    const enemyX = x + 25;
+    const enemyY = y - 38;
+    const tooClose = level.enemies.some(([ex,ey]) => Math.abs(ex - enemyX) < 300 && Math.abs(ey - enemyY) < 90);
+    if (enemyIndex % 3 === 0 && !tooClose) level.enemies.push([enemyX, enemyY, Math.max(70,w - 90)]);
   });
+  spreadEnemies(level);
   level.moving = level.moving.map((moving) => ({ data: moving, lastX: moving[0], x: moving[0] }));
   level.boxes = level.boxes.map(([x,y,type], boxIndex) => ({
     x,
@@ -504,7 +530,9 @@ function update(dt) {
     if (enemy.x > enemy.start + enemy.range || enemy.x < enemy.start) enemy.dir *= -1;
     const box = { x: enemy.x, y: enemy.y, w: enemy.w, h: enemy.h };
     if (rectHit(player, box)) {
-      if (player.vy > 4 && oldBottom < enemy.y + 16 && !enemy.invulnerable) {
+      const stompZone = { x: enemy.x - 14, y: enemy.y - 10, w: enemy.w + 28, h: 30 };
+      const stomped = player.vy > 2 && oldBottom <= enemy.y + 30 && rectHit(player, stompZone);
+      if (stomped && !enemy.invulnerable) {
         enemy.hp--; enemy.invulnerable=28; player.vy=-11; beep(220);
         if(enemy.hp<=0) enemy.alive=false;
       } else if (!enemy.invulnerable) receiveEnemyHit(enemy.x);
