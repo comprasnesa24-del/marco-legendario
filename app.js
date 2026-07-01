@@ -66,7 +66,7 @@ const bossImage = new Image();
 bossImage.src = "francisco.png";
 const monkeyPopImage = new Image();
 monkeyPopImage.src = "monkey-pop.png";
-const levelCompleteVideos = ["world1-complete-video.mp4","world2-complete-video.mp4",null,null];
+const levelCompleteVideos = ["world1-complete-video.mp4","world2-complete-video.mp4","world3-complete-video.mp4",null];
 
 const levels = [
   {
