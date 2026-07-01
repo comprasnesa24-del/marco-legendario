@@ -66,6 +66,7 @@ const bossImage = new Image();
 bossImage.src = "francisco.png";
 const monkeyPopImage = new Image();
 monkeyPopImage.src = "monkey-pop.png";
+const levelCompleteVideos = ["world1-complete-video.mp4","world2-complete-video.mp4",null,null];
 
 const levels = [
   {
@@ -351,7 +352,8 @@ function completeLevel() {
   nextLevelIndex = state === "complete" ? levelIndex + 1 : null;
   const completedName = levels[levelIndex].name;
   const perfectGame = state === "won" && perfectLevels.every(Boolean);
-  const levelVideo = state === "complete" && levelIndex === 0;
+  const levelVideoSrc = state === "complete" ? levelCompleteVideos[levelIndex] : null;
+  const levelVideo = Boolean(levelVideoSrc);
   showMessage(
     perfectGame ? "FINAL SECRETO" : state === "won" ? "POR FIN JUNTOS" : `NIVEL ${levelIndex + 1} COMPLETADO`,
     perfectGame ? "¡SOIS LOS REYES DEL JUEGO!" : state === "won" ? "¡Encontraste a mamá!" : "¡El viaje continúa!",
@@ -371,7 +373,7 @@ function completeLevel() {
     introMusic.pause();
     introMusicButton.classList.remove("playing");
     introMusicButton.textContent = "♪ Escuchar canción";
-    endingVideo.src = levelVideo ? "world1-complete-video.mp4" : perfectGame ? "perfect-ending-video.mp4" : "ending-video.mp4";
+    endingVideo.src = levelVideoSrc || (perfectGame ? "perfect-ending-video.mp4" : "ending-video.mp4");
     endingVideo.load();
     endingVideo.currentTime = 0;
     endingVideo.play().catch(() => {});
