@@ -182,6 +182,15 @@ function spreadEnemies(raw) {
     ));
 }
 
+function ensureCheckpointPlatform(raw) {
+  const [x,y] = raw.checkpoint;
+  const platform = [x - 35, Math.min(FLOOR - 32, y + 78), 250, 24];
+  const hasLanding = raw.platforms.some(([px,py,pw]) =>
+    Math.abs(py - platform[1]) < 45 && px <= x + 85 && px + pw >= x + 35
+  );
+  if (!hasLanding) raw.platforms.push(platform);
+}
+
 function loadLevel(index) {
   levelIndex = index;
   level = structuredClone(levels[index]);
@@ -190,6 +199,7 @@ function loadLevel(index) {
   level.boxes[0][2] = "bananas";
   prepareBoxPlatforms(level);
   ensureBasicJumpRoute(level);
+  ensureCheckpointPlatform(level);
   const extraEnemyPlatforms = level.platforms.filter(([,y,w,h]) => h <= 30 && w >= 170 && y >= 340);
   extraEnemyPlatforms.forEach(([x,y,w], enemyIndex) => {
     const enemyX = x + 25;
@@ -328,6 +338,48 @@ function beep(frequency, duration = .08) {
   osc.start(); osc.stop(audioContext.currentTime + duration);
 }
 
+function tone(frequency, start, duration, type = "sine", gainValue = .055, endFrequency = frequency) {
+  if (!audioEnabled) return;
+  audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+  const osc = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(frequency, audioContext.currentTime + start);
+  osc.frequency.exponentialRampToValueAtTime(Math.max(40,endFrequency), audioContext.currentTime + start + duration);
+  gain.gain.setValueAtTime(gainValue, audioContext.currentTime + start);
+  gain.gain.exponentialRampToValueAtTime(.001, audioContext.currentTime + start + duration);
+  osc.connect(gain).connect(audioContext.destination);
+  osc.start(audioContext.currentTime + start);
+  osc.stop(audioContext.currentTime + start + duration);
+}
+
+function playCoinSound() {
+  tone(980,0,.08,"triangle",.045,1320);
+  tone(1480,.055,.1,"sine",.035,1880);
+}
+
+function playDeathSound() {
+  tone(240,0,.25,"sawtooth",.06,70);
+  tone(120,.05,.22,"square",.025,55);
+}
+
+function playEnemyDefeatSound(type) {
+  if (type === "cockroach") {
+    tone(170,0,.05,"square",.035,120);
+    tone(95,.04,.07,"sawtooth",.03,80);
+  } else if (type === "piranha") {
+    tone(520,0,.07,"triangle",.04,700);
+    tone(260,.06,.12,"sine",.035,140);
+  } else if (type === "rat") {
+    tone(920,0,.06,"square",.035,1250);
+    tone(760,.06,.08,"square",.025,580);
+  } else {
+    tone(360,0,.04,"sawtooth",.03,260);
+    tone(540,.035,.04,"sawtooth",.03,380);
+    tone(280,.08,.07,"square",.025,190);
+  }
+}
+
 function playMonkeyBoxSound() {
   if (!audioEnabled) return;
   monkeyBoxSound.currentTime = 0;
@@ -336,7 +388,7 @@ function playMonkeyBoxSound() {
 
 function respawn() {
   if (!infiniteLives) lives--;
-  beep(130, .3);
+  playDeathSound();
   updateHud();
   if (lives <= 0) {
     showMessage("FIN DE LA AVENTURA", "Casi lo tienes", "Mamá te espera al final del viaje.", "Volver a empezar");
@@ -518,7 +570,7 @@ function update(dt) {
 
   level.coins.forEach((coin) => {
     if (!coin.taken && rectHit(player, { x: coin.x - 16, y: coin.y - 16, w: 32, h: 32 })) {
-      coin.taken = true; coins++; beep(660); updateHud();
+      coin.taken = true; coins++; playCoinSound(); updateHud();
       for (let i = 0; i < 8; i++) particles.push({ x: coin.x, y: coin.y, vx: Math.random()*5-2.5, vy: Math.random()*-5, life: 30 });
     }
   });
@@ -533,8 +585,9 @@ function update(dt) {
       const stompZone = { x: enemy.x - 14, y: enemy.y - 10, w: enemy.w + 28, h: 30 };
       const stomped = player.vy > 2 && oldBottom <= enemy.y + 30 && rectHit(player, stompZone);
       if (stomped && !enemy.invulnerable) {
-        enemy.hp--; enemy.invulnerable=28; player.vy=-11; beep(220);
-        if(enemy.hp<=0) enemy.alive=false;
+        enemy.hp--; enemy.invulnerable=28; player.vy=-11;
+        if(enemy.hp<=0) { enemy.alive=false; playEnemyDefeatSound(enemy.type); }
+        else beep(220);
       } else if (!enemy.invulnerable) receiveEnemyHit(enemy.x);
     }
   });
@@ -549,9 +602,9 @@ function update(dt) {
       if (!enemy.alive || banana.hit || !rectHit({x:banana.x-12,y:banana.y-12,w:24,h:24}, enemy)) return;
       enemy.hp--;
       enemy.invulnerable = 20;
-      if (enemy.hp <= 0) enemy.alive = false;
+      if (enemy.hp <= 0) { enemy.alive = false; playEnemyDefeatSound(enemy.type); }
       banana.hit = true;
-      beep(250,.06);
+      if (enemy.alive) beep(250,.06);
     });
     if (boss && !boss.defeated && !banana.hit && rectHit({x:banana.x-12,y:banana.y-12,w:24,h:24}, boss)) {
       if (!boss.invulnerable) {
