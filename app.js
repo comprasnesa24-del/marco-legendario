@@ -260,9 +260,13 @@ function loadLevel(index) {
     const platform = findEnemyPlatform(level,x,y,enemyStats.w);
     if (!platform) return null;
     const [px,py,pw] = platform;
-    const start = Math.max(px + 8, Math.min(x, px + pw - enemyStats.w - 8));
-    const maxRange = Math.max(0, px + pw - enemyStats.w - 8 - start);
-    return { ...enemyStats, x:start, y:py-enemyStats.h, start, range:Math.min(range,maxRange), dir:1, alive:true, invulnerable:0 };
+    const patrolLeft = px + 10;
+    const patrolRight = px + pw - enemyStats.w - 10;
+    const maxRange = Math.max(0, patrolRight - patrolLeft);
+    const patrolRange = Math.min(range, maxRange);
+    if (patrolRange < 45) return null;
+    const start = Math.max(patrolLeft, Math.min(x, patrolRight - patrolRange));
+    return { ...enemyStats, x:start, y:py-enemyStats.h, start, range:patrolRange, dir:1, alive:true, invulnerable:0 };
   }).filter(Boolean);
   level.openedBoxes = 0;
   bananaAmmo = 0;
