@@ -208,6 +208,20 @@ function fillLongJumpGaps(raw) {
   }
 }
 
+function ensureGroundRoute(raw) {
+  const routeY = [570,560,570,560,565,555];
+  const width = 240;
+  let step = 0;
+  for (let x=520; x < raw.width - 360; x += 320) {
+    const y = routeY[step % routeY.length];
+    const covered = raw.platforms.some(([px,py,pw,ph]) =>
+      py >= 540 && py <= 585 && ph <= 30 && px <= x + 25 && px + pw >= x + width - 25
+    );
+    if (!covered) raw.platforms.push([x,y,width,22]);
+    step++;
+  }
+}
+
 function tuneOpeningRoute(raw, index) {
   if (index !== 0) return;
   const helper = [675,520,150,22];
@@ -238,8 +252,9 @@ function loadLevel(index) {
   ensureBasicJumpRoute(level);
   ensureCheckpointPlatform(level);
   fillLongJumpGaps(level);
+  ensureGroundRoute(level);
   tuneOpeningRoute(level,index);
-  const extraEnemyPlatforms = level.platforms.filter(([,y,w,h]) => h <= 30 && w >= 170 && y >= 340);
+  const extraEnemyPlatforms = level.platforms.filter(([,y,w,h]) => h <= 30 && w >= 170 && y >= 340 && y < 540);
   extraEnemyPlatforms.forEach(([x,y,w], enemyIndex) => {
     const enemyX = x + 25;
     const enemyY = y - 38;
