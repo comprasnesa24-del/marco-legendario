@@ -154,7 +154,7 @@ function prepareBoxPlatforms(raw) {
 function ensureBasicJumpRoute(raw) {
   const safeY = [540, 505, 535, 500, 530, 550];
   let step = 0;
-  for (let x = 430; x < raw.width - 320; x += 500) {
+  for (let x = 430; x < raw.width - 320; x += 420) {
     const y = safeY[step % safeY.length];
     const covered = raw.platforms.some(([px,py,pw]) =>
       py >= 450 && py <= 610 && px <= x - 30 && px + pw >= x + 250
@@ -199,7 +199,8 @@ function fillLongJumpGaps(raw) {
     const prev = walkable[i-1];
     const next = walkable[i];
     const gap = next[0] - (prev[0] + prev[2]);
-    if (gap <= 340) continue;
+    const heightDelta = Math.abs(next[1] - prev[1]);
+    if (gap < 250 || (gap <= 300 && heightDelta <= 30)) continue;
     const width = 210;
     const x = Math.round(prev[0] + prev[2] + gap / 2 - width / 2);
     const y = Math.max(490, Math.min(555, Math.round((prev[1] + next[1]) / 2)));
