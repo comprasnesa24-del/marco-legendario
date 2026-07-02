@@ -208,6 +208,15 @@ function fillLongJumpGaps(raw) {
   }
 }
 
+function tuneOpeningRoute(raw, index) {
+  if (index !== 0) return;
+  const helper = [675,520,150,22];
+  const exists = raw.platforms.some(([x,y,w]) =>
+    Math.abs(y - helper[1]) < 28 && x < helper[0] + helper[2] && x + w > helper[0]
+  );
+  if (!exists) raw.platforms.push(helper);
+}
+
 function findEnemyPlatform(raw, enemyX, enemyY, enemyW) {
   const center = enemyX + enemyW / 2;
   return raw.platforms
@@ -229,6 +238,7 @@ function loadLevel(index) {
   ensureBasicJumpRoute(level);
   ensureCheckpointPlatform(level);
   fillLongJumpGaps(level);
+  tuneOpeningRoute(level,index);
   const extraEnemyPlatforms = level.platforms.filter(([,y,w,h]) => h <= 30 && w >= 170 && y >= 340);
   extraEnemyPlatforms.forEach(([x,y,w], enemyIndex) => {
     const enemyX = x + 25;
