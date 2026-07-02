@@ -152,12 +152,12 @@ function prepareBoxPlatforms(raw) {
 }
 
 function ensureBasicJumpRoute(raw) {
-  const safeY = [540, 500, 530, 490, 520, 550];
+  const safeY = [540, 505, 535, 500, 530, 550];
   let step = 0;
-  for (let x = 430; x < raw.width - 320; x += 360) {
+  for (let x = 430; x < raw.width - 320; x += 500) {
     const y = safeY[step % safeY.length];
     const covered = raw.platforms.some(([px,py,pw]) =>
-      py >= 450 && py <= 610 && px <= x + 50 && px + pw >= x + 180
+      py >= 450 && py <= 610 && px <= x - 30 && px + pw >= x + 250
     );
     if (!covered) raw.platforms.push([x, y, 220, 22]);
     step++;
@@ -191,6 +191,33 @@ function ensureCheckpointPlatform(raw) {
   if (!hasLanding) raw.platforms.push(platform);
 }
 
+function fillLongJumpGaps(raw) {
+  const walkable = raw.platforms
+    .filter(([,y,,h]) => h <= 110 && y >= 450 && y <= 610)
+    .sort((a,b) => a[0] - b[0]);
+  for (let i=1;i<walkable.length;i++) {
+    const prev = walkable[i-1];
+    const next = walkable[i];
+    const gap = next[0] - (prev[0] + prev[2]);
+    if (gap <= 340) continue;
+    const width = 210;
+    const x = Math.round(prev[0] + prev[2] + gap / 2 - width / 2);
+    const y = Math.max(490, Math.min(555, Math.round((prev[1] + next[1]) / 2)));
+    raw.platforms.push([x,y,width,22]);
+  }
+}
+
+function findEnemyPlatform(raw, enemyX, enemyY, enemyW) {
+  const center = enemyX + enemyW / 2;
+  return raw.platforms
+    .filter(([px,py,pw]) =>
+      center >= px + 8 &&
+      center <= px + pw - 8 &&
+      Math.abs(py - (enemyY + 38)) < 95
+    )
+    .sort((a,b) => Math.abs(a[1] - (enemyY + 38)) - Math.abs(b[1] - (enemyY + 38)))[0];
+}
+
 function loadLevel(index) {
   levelIndex = index;
   level = structuredClone(levels[index]);
@@ -200,6 +227,7 @@ function loadLevel(index) {
   prepareBoxPlatforms(level);
   ensureBasicJumpRoute(level);
   ensureCheckpointPlatform(level);
+  fillLongJumpGaps(level);
   const extraEnemyPlatforms = level.platforms.filter(([,y,w,h]) => h <= 30 && w >= 170 && y >= 340);
   extraEnemyPlatforms.forEach(([x,y,w], enemyIndex) => {
     const enemyX = x + 25;
@@ -227,7 +255,14 @@ function loadLevel(index) {
     { type:"rat", speed:1.35, hp:2, w:54, h:36 },
     { type:"spider", speed:3.8, hp:2, w:55, h:35 }
   ][index];
-  level.enemies = level.enemies.map(([x,y,range]) => ({ ...enemyStats, x, y:y+(38-enemyStats.h), start:x, range, dir:1, alive:true, invulnerable:0 }));
+  level.enemies = level.enemies.map(([x,y,range]) => {
+    const platform = findEnemyPlatform(level,x,y,enemyStats.w);
+    if (!platform) return null;
+    const [px,py,pw] = platform;
+    const start = Math.max(px + 8, Math.min(x, px + pw - enemyStats.w - 8));
+    const maxRange = Math.max(0, px + pw - enemyStats.w - 8 - start);
+    return { ...enemyStats, x:start, y:py-enemyStats.h, start, range:Math.min(range,maxRange), dir:1, alive:true, invulnerable:0 };
+  }).filter(Boolean);
   level.openedBoxes = 0;
   bananaAmmo = 0;
   bananas = [];
@@ -502,7 +537,6 @@ function update(dt) {
       const landedAfterJump = !player.grounded && player.jumpsUsed > 0;
       player.y = p.y - player.h; player.vy = 0; player.grounded = true; player.jumpsUsed = 0;
       if (p.moving) player.x += p.dx;
-      if (p.box?.type === "monkey" && landedAfterJump) playMonkeyBoxSound();
       if (p.box?.isLast && levelIndex === 0 && landedAfterJump && p.box.secretJumps < 10) {
         p.box.secretJumps++;
         beep(500+p.box.secretJumps*35,.08);
