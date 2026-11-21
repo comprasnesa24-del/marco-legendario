@@ -1316,36 +1316,50 @@ function drawCartagenaRace() {
   ctx.fillText(`Puesto ${place}/4   ·   Turbo ${race.boosts}   ·   ${Math.min(100,Math.floor(race.distance*100/RACE_LENGTH))}%`,40,95);
 }
 
+const adultMarcoShapes = [
+  ["#dca078", "M-2 -41 Q4 -36 13 -40 L14 -29 Q8 -22 -4 -28Z"],
+  ["#fff5df", "M-5 -30 Q-16 -30 -19 -20 L-16 -11 L-10 -13 Q-13 1 -11 11 Q1 16 14 10 Q17 -1 15 -14 L21 -14 Q22 -25 13 -30 L6 -24Z"],
+  ["#d6c9b1", "M-5 -30 L6 -24 L2 -17 L-8 -27Z M13 -30 L14 -25 L10 -18 L6 -24Z M5 -23 L8 -23 L8 -12 L5 -12Z"],
+  ["#3b231d", "M-7 -43 Q-17 -50 -12 -63 Q-9 -72 4 -72 Q17 -73 22 -64 Q25 -57 20 -50 L0 -43Z"],
+  ["#efb28b", "M-7 -53 Q-5 -62 6 -63 Q12 -62 17 -58 L19 -51 L24 -46 Q25 -44 20 -43 L20 -38 Q18 -29 9 -29 Q0 -29 -4 -40 Q-13 -39 -12 -46 Q-12 -50 -7 -49Z"],
+  ["#4b2a21", "M-10 -54 Q-12 -67 2 -69 Q13 -70 20 -63 Q16 -61 10 -62 Q4 -59 -3 -60 L-5 -46 L-8 -47Z"],
+  ["#3c251e", "M-4 -43 Q1 -38 5 -38 Q7 -41 12 -43 Q17 -44 21 -41 L20 -35 Q18 -27 9 -28 Q0 -29 -4 -39Z"],
+  ["#dc977c", "M11 -38 Q16 -36 19 -38 Q17 -34 13 -35Z"],
+  ["#693d2e", "M10 -55 Q14 -58 18 -55 L18 -53 Q14 -55 10 -53Z"],
+  ["#fff6e6", "M11 -51 Q15 -53 18 -51 Q15 -47 11 -51Z"],
+  ["#302421", "M15 -52 Q18 -52 17 -49 Q15 -48 15 -52Z"]
+].map(([color, path]) => [color, new Path2D(path)]);
+
 function drawAdultMarco(running) {
-  const stride = running ? Math.sin(runPhase) * 19 : 0;
+  const stride = running ? Math.sin(runPhase) : -.35;
+  const bob = running ? Math.abs(Math.cos(runPhase)) * 3 : 0;
+  ctx.save();
+  ctx.translate(0,-bob);
+  ctx.rotate(.08);
   ctx.lineCap = "round";
-  for (const side of [-1, 1]) {
-    const footX = side * (7 + stride);
-    const footY = 34 - Math.max(0, side * stride) * .35;
-    ctx.strokeStyle = side < 0 ? "#213f78" : "#345ca1";
-    ctx.lineWidth = 12;
+  ctx.lineJoin = "round";
+  const limb = (color,width,points) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
     ctx.beginPath();
-    ctx.moveTo(side * 6, 8);
-    ctx.lineTo(footX, footY);
+    ctx.moveTo(...points[0]);
+    for (const point of points.slice(1)) ctx.lineTo(...point);
     ctx.stroke();
-    roundedRect(footX - 5, footY - 2, 16, 8, 4, "#29232a");
+  };
+  for (const side of [-1,1]) {
+    const swing = side * stride;
+    const footX = side * 6 + swing * 24;
+    const footY = 38 - Math.max(0,-swing) * 15;
+    limb(side < 0 ? "#264375" : "#3564a3",12,[[side*5,9],[side*5+swing*13,24],[footX,footY]]);
+    limb("#352921",8,[[footX-3,footY],[footX+8,footY+2]]);
   }
-  roundedRect(-16,-21,31,35,8,"#fff6e1");
-  roundedRect(-16,9,31,5,2,"#563729");
-  ctx.strokeStyle = "#e9a67e";
-  ctx.lineWidth = 7;
-  ctx.beginPath();
-  ctx.moveTo(7,-14);
-  ctx.lineTo(16 + stride * .25,-3);
-  ctx.lineTo(23 + stride * .25,-11);
-  ctx.stroke();
-  roundedRect(-13,-49,33,34,12,"#3a211c");
-  roundedRect(-8,-43,29,25,10,"#f1b58d");
-  roundedRect(-14,-51,31,13,6,"#38201a");
-  roundedRect(-13,-45,8,16,4,"#38201a");
-  roundedRect(14,-37,4,5,2,"#241918");
-  roundedRect(10,-28,13,4,2,"#38201a");
-  roundedRect(1,-24,19,9,4,"#38201a");
+  limb("#ca8866",7,[[-13,-20],[-20+stride*12,-6],[-9+stride*15,-11]]);
+  for (const [color,shape] of adultMarcoShapes) {
+    ctx.fillStyle = color;
+    ctx.fill(shape);
+  }
+  limb("#e6a27d",8,[[16,-17],[20-stride*13,-6],[29-stride*15,-12]]);
+  ctx.restore();
 }
 
 function drawPlayer() {
