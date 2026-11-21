@@ -70,6 +70,8 @@ const monkeyPopImage = new Image();
 monkeyPopImage.src = "monkey-pop.png";
 const levelCompleteVideos = ["world1-complete-video.mp4","world2-complete-video.mp4","world3-complete-video.mp4",null];
 
+const ARGENTINA_LEVEL = 3;
+const CARTAGENA_LEVEL = 4;
 const levels = [
   {
     name: "Italia - El comienzo", theme: "italy", width: 4500, sky: ["#68b9ef", "#ffd9a0"], ground: "#9b623c",
@@ -100,6 +102,19 @@ const levels = [
     enemies: [[1100,522,110],[1740,502,110],[3000,452,110],[5050,482,130],[5400,362,80]], spikes: [[350,585,95],[940,585,100],[1580,585,90],[2210,585,110],[3180,585,110],[4305,585,95],[5540,585,100]], boxes: [[550,340,"coin"],[1780,350,"monkey"],[3040,300,"coin"],[3650,330,"coin"],[4480,300,"coin"],[5080,340,"coin"],[5760,175,"coin"]], goal: [6170,470]
   }
 ];
+
+const cartagenaDocks = Array.from({length: 13}, (_, i) => [i * 320, [610, 565, 540, 575][i % 4], 240, 36]);
+cartagenaDocks[12] = [3840, 610, 320, 110];
+levels.push({
+  name: "Cartagena - Regreso al Mediterráneo", theme: "cartagena", width: 4160,
+  sky: ["#4faacb", "#ffdda5"], ground: "#9a7653",
+  platforms: cartagenaDocks,
+  checkpoint: [1990, 462],
+  coins: cartagenaDocks.slice(1).map(([x,y]) => [x+120,y-55]),
+  enemies: cartagenaDocks.filter((_, i) => [2,4,8,10].includes(i)).map(([x,y]) => [x+25,y-38,90]),
+  boxes: [[420,430,"bananas"],[1080,420,"monkey"],[1730,415,"coin"],[2690,420,"coin"],[3880,260,"coin"]],
+  spikes: [], goal: [4000,480]
+});
 
 let level;
 let player;
@@ -243,17 +258,20 @@ function findEnemyPlatform(raw, enemyX, enemyY, enemyW) {
 }
 
 function loadLevel(index) {
+  nextLevelIndex = null;
   levelIndex = index;
   level = structuredClone(levels[index]);
   level.moving ||= [];
-  extendLevel(level,index);
+  if (index !== CARTAGENA_LEVEL) extendLevel(level,index);
   level.boxes[0][2] = "bananas";
   prepareBoxPlatforms(level);
-  ensureBasicJumpRoute(level);
+  if (index !== CARTAGENA_LEVEL) ensureBasicJumpRoute(level);
   ensureCheckpointPlatform(level);
-  fillLongJumpGaps(level);
-  ensureGroundRoute(level);
-  tuneOpeningRoute(level,index);
+  if (index !== CARTAGENA_LEVEL) {
+    fillLongJumpGaps(level);
+    ensureGroundRoute(level);
+    tuneOpeningRoute(level,index);
+  }
   const extraEnemyPlatforms = level.platforms.filter(([,y,w,h]) => h <= 30 && w >= 170 && y >= 340 && y < 540);
   extraEnemyPlatforms.forEach(([x,y,w], enemyIndex) => {
     const enemyX = x + 25;
@@ -279,7 +297,8 @@ function loadLevel(index) {
     { type:"cockroach", speed:2.1, hp:1, w:48, h:30 },
     { type:"piranha", speed:3.5, hp:1, w:52, h:34 },
     { type:"rat", speed:1.35, hp:2, w:54, h:36 },
-    { type:"spider", speed:3.8, hp:2, w:55, h:35 }
+    { type:"spider", speed:3.8, hp:2, w:55, h:35 },
+    { type:"rat", speed:2.2, hp:1, w:54, h:36 }
   ][index];
   level.enemies = level.enemies.map(([x,y,range]) => {
     const platform = findEnemyPlatform(level,x,y,enemyStats.w);
@@ -302,7 +321,7 @@ function loadLevel(index) {
   particles = [];
   monkeyPop = null;
   level.checkpoint = { x: level.checkpoint[0], y: level.checkpoint[1], active: false };
-  boss = index === levels.length - 1 ? { x: level.width-520, y: 465, w: 105, h: 145, vx: -3.5, hp: 3, invulnerable: 0, defeated: false } : null;
+  boss = index === ARGENTINA_LEVEL ? { x: level.width-520, y: 465, w: 105, h: 145, vx: -3.5, hp: 3, invulnerable: 0, defeated: false } : null;
   updateHud();
 }
 
@@ -487,10 +506,17 @@ function showMessage(kicker, title, text, button) {
 
 function completeLevel() {
   beep(740, .35);
+  if (levelIndex === CARTAGENA_LEVEL) {
+    state = "won";
+    messageCard.classList.remove("victory", "level-video");
+    storyVisual.className = "story-visual";
+    showMessage("CARTAGENA COMPLETADA", "¡Hasta la próxima, Marco!", "Has recorrido el puerto y llegado al teatro romano.", "Jugar de nuevo");
+    return;
+  }
   const requiredBoxes = level.boxes.filter(box => box.countsForCompletion !== false);
   perfectLevels[levelIndex] = level.coins.every(coin=>coin.taken) && requiredBoxes.every(box=>box.used);
-  state = levelIndex === levels.length - 1 ? "won" : "complete";
-  nextLevelIndex = state === "complete" ? levelIndex + 1 : null;
+  state = levelIndex === ARGENTINA_LEVEL ? "won" : "complete";
+  nextLevelIndex = levelIndex + 1;
   const completedName = levels[levelIndex].name;
   const perfectGame = state === "won" && perfectLevels.every(Boolean);
   const levelVideoSrc = state === "complete" ? levelCompleteVideos[levelIndex] : null;
@@ -503,7 +529,7 @@ function completeLevel() {
       : state === "won"
       ? `Has superado Argentina y derrotado a Francisco. Después de cruzar el mundo, mamá y tú volvéis a estar juntos. Recogiste ${coins} monedas.`
       : `Has superado ${completedName} al alcanzar la estrella final. Abriste ${level.openedBoxes} de ${requiredBoxes.length} cajas. Siguiente parada: ${levels[levelIndex + 1].name}.`,
-    state === "won" ? "Jugar de nuevo" : "Siguiente nivel"
+    state === "won" ? "Jugar en Cartagena" : "Siguiente nivel"
   );
   messageCard.classList.toggle("victory",state === "won");
   messageCard.classList.toggle("level-video",levelVideo);
@@ -795,7 +821,35 @@ function drawEnemy(enemy) {
 
 function drawBackdrop() {
   const drift = cameraX * .12;
-  if (level.theme === "italy") {
+  if (level.theme === "cartagena") {
+    ctx.fillStyle = "#287e94";
+    ctx.fillRect(0, 465, W, 255);
+    for (let i = 0; i < 8; i++) {
+      const x = i * 220 - drift % 220;
+      roundedRect(x, 480 + i % 3 * 22, 112, 3, 2, "#94cfcc");
+      if (i % 2 === 0) {
+        roundedRect(x, 448, 136, 17, 8, "#f3e6c8");
+        roundedRect(x + 46, 402, 5, 48, 2, "#543c35");
+        ctx.beginPath();
+        ctx.moveTo(x + 52, 401);
+        ctx.lineTo(x + 52, 445);
+        ctx.lineTo(x + 90, 445);
+        ctx.fillStyle = "#fff8dc";
+        ctx.fill();
+      }
+    }
+    const center = 1450 - drift * 2;
+    for (let row = 0; row < 7; row++) {
+      ctx.beginPath();
+      ctx.ellipse(center, 390 + row * 12, 175 + row * 18, 48, 0, Math.PI, 2 * Math.PI);
+      ctx.strokeStyle = row % 2 ? "#b38d68" : "#ead0a4";
+      ctx.lineWidth = 11;
+      ctx.stroke();
+    }
+    for (let i = 0; i < 6; i++) {
+      roundedRect(center - 120 + i * 44, 306, 10, 84, 2, "#dec299");
+    }
+  } else if (level.theme === "italy") {
     for (let i=0;i<10;i++) {
       const x=i*420-drift%420;
       ctx.fillStyle=i%2?"#e9895e":"#f3b569"; ctx.fillRect(x,FLOOR-245,250,245);
@@ -930,7 +984,7 @@ function draw() {
   });
 
   const [gx,gy] = level.goal;
-  if (levelIndex === levels.length - 1 && boss?.defeated && motherImage.complete && motherImage.naturalWidth) {
+  if (levelIndex === ARGENTINA_LEVEL && boss?.defeated && motherImage.complete && motherImage.naturalWidth) {
     ctx.globalAlpha=.22; ctx.beginPath();ctx.arc(gx+35,gy+45,78,0,Math.PI*2);ctx.fillStyle="#ffd45c";ctx.fill();ctx.globalAlpha=1;
     ctx.drawImage(motherImage,gx-10,gy-30,95,165);
   } else {
@@ -976,12 +1030,52 @@ function draw() {
   }
 }
 
+function drawAdultMarco(running) {
+  const stride = running ? Math.sin(runPhase) * 19 : 0;
+  ctx.lineCap = "round";
+  for (const side of [-1, 1]) {
+    const footX = side * (7 + stride);
+    const footY = 34 - Math.max(0, side * stride) * .35;
+    ctx.strokeStyle = side < 0 ? "#213f78" : "#345ca1";
+    ctx.lineWidth = 12;
+    ctx.beginPath();
+    ctx.moveTo(side * 6, 8);
+    ctx.lineTo(footX, footY);
+    ctx.stroke();
+    roundedRect(footX - 5, footY - 2, 16, 8, 4, "#29232a");
+  }
+  roundedRect(-16,-21,31,35,8,"#fff6e1");
+  roundedRect(-16,9,31,5,2,"#563729");
+  ctx.strokeStyle = "#e9a67e";
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.moveTo(7,-14);
+  ctx.lineTo(16 + stride * .25,-3);
+  ctx.lineTo(23 + stride * .25,-11);
+  ctx.stroke();
+  roundedRect(-13,-49,33,34,12,"#3a211c");
+  roundedRect(-8,-43,29,25,10,"#f1b58d");
+  roundedRect(-14,-51,31,13,6,"#38201a");
+  roundedRect(-13,-45,8,16,4,"#38201a");
+  roundedRect(14,-37,4,5,2,"#241918");
+  roundedRect(10,-28,13,4,2,"#38201a");
+  roundedRect(1,-24,19,9,4,"#38201a");
+  if (player.hasMonkey && monkeyPopImage.complete && monkeyPopImage.naturalWidth) {
+    ctx.drawImage(monkeyPopImage,-37,-49,31,31);
+  }
+}
+
 function drawPlayer() {
   const {x,y,w,h,facing}=player;
   const running = player.grounded && Math.abs(player.vx) > 1;
   const bob = running ? Math.abs(Math.sin(runPhase)) * 4 : 0;
   ctx.save(); ctx.translate(x+w/2,y+h/2-bob); ctx.scale(facing,1);
   ctx.rotate(running ? Math.sin(runPhase) * .035 : 0);
+  if (levelIndex === CARTAGENA_LEVEL) {
+    drawAdultMarco(running);
+    ctx.restore();
+    return;
+  }
   const wearsJacket = levelIndex === 2;
   const runSheet = wearsJacket
     ? world3JacketRunSheetImage
