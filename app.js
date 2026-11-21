@@ -73,7 +73,8 @@ const levelCompleteVideos = ["world1-complete-video.mp4","world2-complete-video.
 const ARGENTINA_LEVEL = 3;
 const CARTAGENA_LEVEL = 4;
 const RACE_LEVEL = 5;
-const RACE_LENGTH = 7200;
+const RACE_LENGTH = 36000;
+const RACE_CAR_COUNT = 10;
 let race;
 const CARMEN_LENGTH = 6200;
 let carmen;
@@ -1084,15 +1085,28 @@ function drawCarmenFacade(side, near, far, index) {
     streetPoint(wall,a,bottom),streetPoint(wall,b,bottom),
     streetPoint(wall,b,top),streetPoint(wall,a,top)
   ],color);
-  const church = side === 1 && index === 7;
+  const church = side === 1 && index === 16;
   const height = church ? 710 : 515 + index % 3 * 55;
-  panel(near,far,0,height,church ? "#eac59c" : ["#e6a379","#ecd4af","#cea494","#f2be83"][index % 4]);
+  panel(near,far,0,height,church ? "#a45c48" : ["#e6a379","#ecd4af","#cea494","#f2be83"][index % 4]);
   panel(near,far,0,35,"#807067");
   panel(near,far,height-17,height,"#fbebd3");
   if (church) {
-    panel(near+45,far-35,0,205,"#56433e");
-    panel(near+32,near+52,0,230,"#fff1cf");
-    panel(far-52,far-32,0,230,"#fff1cf");
+    for (let row=40; row<height; row+=27) panel(near,far,row,row+2,"#db9e79");
+    const arch = (center,width,spring,rise,color) => {
+      const points = [streetPoint(wall,center-width,0)];
+      for (let i=0;i<=16;i++) {
+        const angle = Math.PI * (1-i/16);
+        points.push(streetPoint(wall,center+Math.cos(angle)*width,spring+Math.sin(angle)*rise));
+      }
+      points.push(streetPoint(wall,center+width,0));
+      streetShape(points,color);
+    };
+    for (const [offset,width] of [[45,26],[150,46],[255,26]]) {
+      arch(near+offset,width+8,130,58,"#e5bf99");
+      arch(near+offset,width,127,51,"#4b3530");
+    }
+    for (let bar=18;bar<285;bar+=15) panel(near+bar,near+bar+3,0,100,"#322b2c");
+    for (const post of [8,115,185,288]) panel(near+post-5,near+post+7,0,118,"#e5cfad");
     panel(near+100,far-85,310,395,"#7d6254");
     panel(near+137,near+150,590,680,"#765545");
     panel(near+112,near+175,632,645,"#765545");
@@ -1189,11 +1203,13 @@ function startCartagenaRace() {
   for (const key of Object.keys(keys)) keys[key] = false;
   race = {
     distance: 0, offset: 0, speed: 0, boosts: 3, turbo: 0, cooldown: 0,
-    rivals: [
-      {distance: 180, lane: -190, speed: 9.55, color: "#bd483e"},
-      {distance: 330, lane: 185, speed: 9.35, color: "#d69b3b"},
-      {distance: 480, lane: 0, speed: 9.18, color: "#506942"}
-    ]
+    rivals: ["#bd483e","#d69b3b","#506942","#8651a3","#a9bac8","#ef7451","#367c7b","#ba8c76","#812948"]
+      .map((color,i) => ({
+        distance: 150 + Math.floor(i/3)*180 + (i%3)*12,
+        lane: [-210,0,210][i%3],
+        speed: 9 + i*.045,
+        color
+      }))
   };
   levelLabel.textContent = "6 / 6";
 }
@@ -1209,7 +1225,7 @@ function updateCartagenaRace() {
   keys.jump = keys.fire = false;
   if (race.turbo) race.turbo--;
   if (race.cooldown) race.cooldown--;
-  const target = race.turbo ? 15 : 9.4;
+  const target = race.turbo ? 16 : 9.4;
   race.speed += (target - race.speed) * .045;
   race.distance += race.speed;
   for (const rival of race.rivals) {
@@ -1228,114 +1244,115 @@ function updateCartagenaRace() {
   nextLevelIndex = place === 1 ? null : RACE_LEVEL;
   messageCard.classList.remove("victory", "level-video");
   storyVisual.className = "story-visual";
-  showMessage("META · CARTAGENA", place === 1 ? "¡Marco gana la carrera!" : `Puesto ${place} de 4`,
+  showMessage("META · CARTAGENA", place === 1 ? "¡Marco gana la carrera!" : `Puesto ${place} de ${RACE_CAR_COUNT}`,
     "Ford Fiesta Trip azul · 1989 · 3900AF", place === 1 ? "Jugar de nuevo" : "Repetir carrera");
 }
 
 function raceRoadCenter(distance) {
-  return W / 2 + Math.sin(distance / 710) * 130 + Math.sin(distance / 330) * 36;
+  return Math.sin(distance/1250)*220 + Math.sin(distance/610)*62;
 }
 
-function drawRaceCar(x, y, color, isMarco = false) {
+function racePoint(lane,depth,height=0) {
+  const scale = 360 / (360 + depth);
+  const bend = raceRoadCenter(race.distance+depth) - raceRoadCenter(race.distance);
+  return [W/2 + (lane+bend-race.offset*.65)*scale, 207+(480-height)*scale];
+}
+
+function drawRaceCar(lane, depth, color, isMarco=false) {
+  const [x,y] = racePoint(lane,depth);
+  const scale = 360/(360+depth);
   ctx.save();
-  ctx.translate(x, y);
-  roundedRect(-43,-62,86,139,13,"#131e2b55");
-  for (const side of [-1,1]) {
-    roundedRect(side*37-7,-51,14,31,4,"#22242b");
-    roundedRect(side*37-7,27,14,31,4,"#22242b");
-  }
-  roundedRect(-37,-67,74,135,9,color);
-  roundedRect(-31,-60,62,33,5,isMarco?"#438ee0":color);
-  roundedRect(-30,-28,60,34,5,"#273d50");
+  ctx.translate(x,y);
+  ctx.scale(scale,scale);
+  roundedRect(-67,-13,134,21,10,"#13233566");
+  roundedRect(-62,-31,23,39,7,"#1c2630");
+  roundedRect(39,-31,23,39,7,"#1c2630");
+  streetShape([[-62,-36],[-46,-75],[-30,-102],[29,-102],[46,-75],[62,-36]],color);
+  streetShape([[-47,-73],[-30,-96],[29,-96],[46,-73]],isMarco?"#649ce0":"#ffffff36");
+  streetShape([[-46,-72],[46,-72],[53,-48],[-53,-48]],"#233947");
+  streetShape([[-42,-68],[42,-68],[46,-60],[-44,-55]],"#8ab1bf88");
+  roundedRect(-63,-46,126,39,7,color);
+  roundedRect(-59,-41,118,5,2,"#ffffff67");
+  roundedRect(-58,-35,27,16,3,"#e75248");
+  roundedRect(31,-35,27,16,3,"#e75248");
+  roundedRect(-64,-13,128,10,4,"#202934");
   if (isMarco) {
-    roundedRect(-23,-21,21,22,6,"#fff6e1");
-    roundedRect(-21,-23,17,16,6,"#332018");
-    roundedRect(-18,-19,12,9,3,"#eab68b");
-    roundedRect(-18,-13,12,5,2,"#332018");
-  }
-  roundedRect(-31,7,62,24,4,color);
-  roundedRect(-28,32,56,18,3,"#273d50");
-  roundedRect(-37,59,74,11,2,"#22242b");
-  for (const side of [-1,1]) {
-    roundedRect(side*25-8,-64,16,7,2,"#fff1ac");
-    roundedRect(side*26-7,53,14,7,2,"#f45052");
-  }
-  if (isMarco) {
-    roundedRect(-25,54,50,15,2,"#f9f5e9");
+    roundedRect(-28,-33,56,17,2,"#fff7df");
+    ctx.fillStyle = "#172331";
     ctx.textAlign = "center";
-    ctx.font = "bold 12px monospace";
-    ctx.fillStyle = "#151923";
-    ctx.fillText("3900AF",0,66);
+    ctx.font = "bold 13px monospace";
+    ctx.fillText("3900AF",0,-20);
   }
   ctx.restore();
 }
 
 function drawCartagenaRace() {
-  ctx.fillStyle = "#238ca3";
+  const sky = ctx.createLinearGradient(0,0,0,330);
+  sky.addColorStop(0,"#328bb8");
+  sky.addColorStop(1,"#ffdaaa");
+  ctx.fillStyle = sky;
   ctx.fillRect(0,0,W,H);
-  for (let y=0; y<H; y+=8) {
-    const distance = race.distance + 512 - y;
-    const center = raceRoadCenter(distance);
-    ctx.fillStyle = "#c5a47f";
-    ctx.fillRect(center-423,y,W,8);
-    ctx.fillStyle = "#e6cb9d";
-    ctx.fillRect(center-402,y,804,8);
-    ctx.fillStyle = "#333d49";
-    ctx.fillRect(center-383,y,766,8);
-    if (((distance % 96) + 96) % 96 < 45) {
-      ctx.fillStyle = "#f4e5be";
-      for (const lane of [-112,112]) ctx.fillRect(center+lane,y,4,8);
+  streetShape([[0,219],[155,113],[315,181],[491,105],[685,206],[875,119],[W,208],[W,310],[0,310]],"#6e8389");
+  ctx.fillStyle = "#347e95";
+  ctx.fillRect(0,220,W,H-220);
+  const strip = (left,right,near,far,color) => streetShape([
+    racePoint(left,near),racePoint(right,near),racePoint(right,far),racePoint(left,far)
+  ],color);
+  const step = 60;
+  const offset = race.distance % step;
+  for (let i=90;i>=0;i--) {
+    const near = Math.max(-25,i*step-offset);
+    const far = (i+1)*step-offset;
+    const stripe = (Math.floor(race.distance/step)+i)%2===0;
+    strip(-540,540,near,far,stripe?"#dac49d":"#bda687");
+    strip(-418,418,near,far,stripe?"#f5e8cf":"#bf6352");
+    strip(-398,398,near,far,stripe?"#384653":"#35424e");
+    if (stripe) for (const lane of [-132,132]) strip(lane-3,lane+3,near,far,"#f6e4c7");
+    if (i%9===4) {
+      const [x,y] = racePoint(477,near);
+      const size = 360/(360+near);
+      roundedRect(x-4*size,y-126*size,8*size,126*size,3*size,"#354a50");
+      roundedRect(x-28*size,y-130*size,33*size,10*size,4*size,"#ffe2a0");
+      const [boatX,boatY] = racePoint(-600,near);
+      streetShape([[boatX-45*size,boatY],[boatX+50*size,boatY],[boatX+30*size,boatY+14*size],[boatX-28*size,boatY+14*size]],"#f9e9d2");
+      streetShape([[boatX,boatY-84*size],[boatX+36*size,boatY-7*size],[boatX,boatY-7*size]],"#fff8e3");
     }
-    if (distance >= RACE_LENGTH && distance < RACE_LENGTH + 32) {
-      for (let i=0; i<32; i++) {
-        ctx.fillStyle = (i + Math.floor((distance-RACE_LENGTH)/8)) % 2 ? "#151923" : "#fff9ec";
-        ctx.fillRect(center-382+i*24,y,24,8);
-      }
-    }
   }
-  for (let i=-1; i<7; i++) {
-    const y = ((race.distance * .8) % 160) + i * 160;
-    const center = raceRoadCenter(race.distance + 512 - y);
-    roundedRect(center-476,y,24,82,10,"#f2eee0");
-    roundedRect(center-472,y+19,16,36,5,"#357b91");
-    roundedRect(center+429,y,110,97,9,i%2?"#bd825b":"#e4c49b");
-    roundedRect(center+449,y+18,20,37,4,"#49636d");
-    roundedRect(center+489,y+18,20,37,4,"#49636d");
+  const finish = RACE_LENGTH-race.distance;
+  if (finish>=0 && finish<4000) {
+    for (let i=0;i<16;i++) strip(-398+i*49.75,-398+(i+1)*49.75,finish,finish+28,i%2?"#202934":"#fff4dd");
   }
-  for (const rival of race.rivals) {
-    const y = 512 + race.distance - rival.distance;
-    if (y > -80 && y < H+80) drawRaceCar(raceRoadCenter(rival.distance)+rival.lane,y,rival.color);
+  for (const rival of [...race.rivals].sort((a,b)=>b.distance-a.distance)) {
+    const depth = rival.distance-race.distance;
+    if (depth>0 && depth<5400) drawRaceCar(rival.lane,depth,rival.color);
   }
-  drawRaceCar(raceRoadCenter(race.distance)+race.offset,512,"#225ba6",true);
-  roundedRect(22,24,378,105,16,"#101829e8");
+  drawRaceCar(race.offset,0,"#2467b4",true);
+  roundedRect(22,24,412,105,16,"#101829e8");
   ctx.fillStyle = "#fff8e6";
   ctx.font = "bold 23px sans-serif";
   ctx.fillText("CARTAGENA · CARRERA DEL PUERTO",40,57);
-  const place = 1 + race.rivals.filter(rival => rival.distance > race.distance).length;
+  const place = 1+race.rivals.filter(rival=>rival.distance>race.distance).length;
   ctx.font = "bold 20px sans-serif";
-  ctx.fillText(`Puesto ${place}/4   ·   Turbo ${race.boosts}   ·   ${Math.min(100,Math.floor(race.distance*100/RACE_LENGTH))}%`,40,95);
+  ctx.fillText(`Puesto ${place}/${RACE_CAR_COUNT}   ·   Turbo ${race.boosts}   ·   ${Math.min(100,Math.floor(race.distance*100/RACE_LENGTH))}%`,40,95);
 }
 
+
 const adultMarcoShapes = [
-  ["#dca078", "M-2 -41 Q4 -36 13 -40 L14 -29 Q8 -22 -4 -28Z"],
-  ["#fff5df", "M-5 -30 Q-16 -30 -19 -20 L-16 -11 L-10 -13 Q-13 1 -11 11 Q1 16 14 10 Q17 -1 15 -14 L21 -14 Q22 -25 13 -30 L6 -24Z"],
-  ["#d6c9b1", "M-5 -30 L6 -24 L2 -17 L-8 -27Z M13 -30 L14 -25 L10 -18 L6 -24Z M5 -23 L8 -23 L8 -12 L5 -12Z"],
-  ["#3b231d", "M-7 -43 Q-17 -50 -12 -63 Q-9 -72 4 -72 Q17 -73 22 -64 Q25 -57 20 -50 L0 -43Z"],
-  ["#efb28b", "M-7 -53 Q-5 -62 6 -63 Q12 -62 17 -58 L19 -51 L24 -46 Q25 -44 20 -43 L20 -38 Q18 -29 9 -29 Q0 -29 -4 -40 Q-13 -39 -12 -46 Q-12 -50 -7 -49Z"],
-  ["#4b2a21", "M-10 -54 Q-12 -67 2 -69 Q13 -70 20 -63 Q16 -61 10 -62 Q4 -59 -3 -60 L-5 -46 L-8 -47Z"],
-  ["#3c251e", "M-4 -43 Q1 -38 5 -38 Q7 -41 12 -43 Q17 -44 21 -41 L20 -35 Q18 -27 9 -28 Q0 -29 -4 -39Z"],
-  ["#dc977c", "M11 -38 Q16 -36 19 -38 Q17 -34 13 -35Z"],
-  ["#693d2e", "M10 -55 Q14 -58 18 -55 L18 -53 Q14 -55 10 -53Z"],
-  ["#fff6e6", "M11 -51 Q15 -53 18 -51 Q15 -47 11 -51Z"],
-  ["#302421", "M15 -52 Q18 -52 17 -49 Q15 -48 15 -52Z"]
-].map(([color, path]) => [color, new Path2D(path)]);
+  ["#bd825f","M-8 -41 Q0 -35 8 -41 L9 -28 L-9 -28Z"],
+  ["#fff4dc","M-10 -32 Q-19 -30 -24 -22 L-20 -11 L-14 -13 L-12 11 Q0 16 12 11 L14 -13 L20 -11 L24 -22 Q19 -30 10 -32 Q0 -25 -10 -32Z"],
+  ["#d7ccbb","M-10 -32 Q0 -26 10 -32 L11 -27 Q0 -20 -11 -27Z M-14 -13 L-12 11 L-8 13 L-9 -9Z"],
+  ["#d99b76","M-14 -54 Q-24 -56 -20 -46 Q-18 -42 -13 -43 L13 -43 Q19 -42 20 -49 Q21 -55 14 -54Z"],
+  ["#34201c","M-16 -50 Q-22 -61 -13 -69 Q-1 -78 12 -70 Q21 -66 18 -55 Q16 -44 8 -40 Q1 -37 -8 -41 Q-14 -44 -16 -50Z"],
+  ["#563229","M-15 -61 Q-8 -72 7 -70 Q12 -69 14 -66 Q4 -68 -3 -65 Q-12 -63 -15 -57Z"],
+  ["#493027","M-16 -49 Q-14 -43 -9 -41 L-11 -38 Q-15 -40 -16 -49Z M16 -49 Q14 -43 9 -41 L11 -38 Q15 -40 16 -49Z"]
+].map(([color,path])=>[color,new Path2D(path)]);
 
 function drawAdultMarco(running) {
   const stride = running ? Math.sin(runPhase) : -.35;
   const bob = running ? Math.abs(Math.cos(runPhase)) * 3 : 0;
   ctx.save();
   ctx.translate(0,-bob);
-  ctx.rotate(.08);
+  ctx.rotate((Number(keys.right)-Number(keys.left))*.12);
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   const limb = (color,width,points) => {
@@ -1348,17 +1365,17 @@ function drawAdultMarco(running) {
   };
   for (const side of [-1,1]) {
     const swing = side * stride;
-    const footX = side * 6 + swing * 24;
+    const footX = side * 9 + swing * 5;
     const footY = 38 - Math.max(0,-swing) * 15;
-    limb(side < 0 ? "#264375" : "#3564a3",12,[[side*5,9],[side*5+swing*13,24],[footX,footY]]);
+    limb(side < 0 ? "#264375" : "#3564a3",12,[[side*6,9],[side*8+swing*5,24],[footX,footY]]);
     limb("#352921",8,[[footX-3,footY],[footX+8,footY+2]]);
   }
-  limb("#ca8866",7,[[-13,-20],[-20+stride*12,-6],[-9+stride*15,-11]]);
+  limb("#ca8866",7,[[-17,-20],[-25+stride*4,-6],[-23+stride*5,4+stride*10]]);
   for (const [color,shape] of adultMarcoShapes) {
     ctx.fillStyle = color;
     ctx.fill(shape);
   }
-  limb("#e6a27d",8,[[16,-17],[20-stride*13,-6],[29-stride*15,-12]]);
+  limb("#e6a27d",8,[[18,-16],[25+stride*4,-5],[23+stride*5,4-stride*10]]);
   ctx.restore();
 }
 
