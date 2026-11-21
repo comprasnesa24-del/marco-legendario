@@ -233,6 +233,8 @@ canvas {
 .mobile-controls { display: none; }
 .turbo-label { display: none; }
 .race-mode .hud > div,
+.carmen-mode .hud > div,
+.carmen-mode .mobile-controls .fire,
 .race-mode .mobile-controls .fire,
 .race-mode .jump-label { display: none; }
 .race-mode .turbo-label { display: inline; font-size: .4em; font-weight: 800; text-transform: uppercase; }

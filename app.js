@@ -75,6 +75,8 @@ const CARTAGENA_LEVEL = 4;
 const RACE_LEVEL = 5;
 const RACE_LENGTH = 7200;
 let race;
+const CARMEN_LENGTH = 6200;
+let carmen;
 const levels = [
   {
     name: "Italia - El comienzo", theme: "italy", width: 4500, sky: ["#68b9ef", "#ffd9a0"], ground: "#9b623c",
@@ -105,19 +107,6 @@ const levels = [
     enemies: [[1100,522,110],[1740,502,110],[3000,452,110],[5050,482,130],[5400,362,80]], spikes: [[350,585,95],[940,585,100],[1580,585,90],[2210,585,110],[3180,585,110],[4305,585,95],[5540,585,100]], boxes: [[550,340,"coin"],[1780,350,"monkey"],[3040,300,"coin"],[3650,330,"coin"],[4480,300,"coin"],[5080,340,"coin"],[5760,175,"coin"]], goal: [6170,470]
   }
 ];
-
-const cartagenaDocks = Array.from({length: 13}, (_, i) => [i * 320, [610, 565, 540, 575][i % 4], 240, 36]);
-cartagenaDocks[12] = [3840, 610, 320, 110];
-levels.push({
-  name: "Cartagena - Regreso al Mediterráneo", theme: "cartagena", width: 4160,
-  sky: ["#4faacb", "#ffdda5"], ground: "#9a7653",
-  platforms: cartagenaDocks,
-  checkpoint: [1990, 462],
-  coins: cartagenaDocks.slice(1).map(([x,y]) => [x+120,y-55]),
-  enemies: cartagenaDocks.filter((_, i) => [2,4,8,10].includes(i)).map(([x,y]) => [x+25,y-38,90]),
-  boxes: [[420,430,"bananas"],[1080,420,"monkey"],[1730,415,"coin"],[2690,420,"coin"],[3880,260,"coin"]],
-  spikes: [], goal: [4000,480]
-});
 
 let level;
 let player;
@@ -264,22 +253,25 @@ function loadLevel(index) {
   nextLevelIndex = null;
   levelIndex = index;
   document.body.classList.toggle("race-mode", index === RACE_LEVEL);
+  document.body.classList.toggle("carmen-mode", index === CARTAGENA_LEVEL);
+  if (index === CARTAGENA_LEVEL) {
+    startCarmenRun();
+    return;
+  }
   if (index === RACE_LEVEL) {
     startCartagenaRace();
     return;
   }
   level = structuredClone(levels[index]);
   level.moving ||= [];
-  if (index !== CARTAGENA_LEVEL) extendLevel(level,index);
+  extendLevel(level,index);
   level.boxes[0][2] = "bananas";
   prepareBoxPlatforms(level);
-  if (index !== CARTAGENA_LEVEL) ensureBasicJumpRoute(level);
+  ensureBasicJumpRoute(level);
   ensureCheckpointPlatform(level);
-  if (index !== CARTAGENA_LEVEL) {
-    fillLongJumpGaps(level);
-    ensureGroundRoute(level);
-    tuneOpeningRoute(level,index);
-  }
+  fillLongJumpGaps(level);
+  ensureGroundRoute(level);
+  tuneOpeningRoute(level,index);
   const extraEnemyPlatforms = level.platforms.filter(([,y,w,h]) => h <= 30 && w >= 170 && y >= 340 && y < 540);
   extraEnemyPlatforms.forEach(([x,y,w], enemyIndex) => {
     const enemyX = x + 25;
@@ -305,8 +297,7 @@ function loadLevel(index) {
     { type:"cockroach", speed:2.1, hp:1, w:48, h:30 },
     { type:"piranha", speed:3.5, hp:1, w:52, h:34 },
     { type:"rat", speed:1.35, hp:2, w:54, h:36 },
-    { type:"spider", speed:3.8, hp:2, w:55, h:35 },
-    { type:"rat", speed:2.2, hp:1, w:54, h:36 }
+    { type:"spider", speed:3.8, hp:2, w:55, h:35 }
   ][index];
   level.enemies = level.enemies.map(([x,y,range]) => {
     const platform = findEnemyPlatform(level,x,y,enemyStats.w);
@@ -538,7 +529,7 @@ function completeLevel() {
       : state === "won"
       ? `Has superado Argentina y derrotado a Francisco. Después de cruzar el mundo, mamá y tú volvéis a estar juntos. Recogiste ${coins} monedas.`
       : `Has superado ${completedName} al alcanzar la estrella final. Abriste ${level.openedBoxes} de ${requiredBoxes.length} cajas. Siguiente parada: ${levels[levelIndex + 1].name}.`,
-    state === "won" ? "Jugar en Cartagena" : "Siguiente nivel"
+    state === "won" ? "Correr por la Calle del Carmen" : "Siguiente nivel"
   );
   messageCard.classList.toggle("victory",state === "won");
   messageCard.classList.toggle("level-video",levelVideo);
@@ -558,6 +549,10 @@ function completeLevel() {
 
 function update(dt) {
   if (state !== "playing") return;
+  if (levelIndex === CARTAGENA_LEVEL) {
+    updateCarmenRun();
+    return;
+  }
   if (levelIndex === RACE_LEVEL) {
     updateCartagenaRace();
     return;
@@ -834,35 +829,7 @@ function drawEnemy(enemy) {
 
 function drawBackdrop() {
   const drift = cameraX * .12;
-  if (level.theme === "cartagena") {
-    ctx.fillStyle = "#287e94";
-    ctx.fillRect(0, 465, W, 255);
-    for (let i = 0; i < 8; i++) {
-      const x = i * 220 - drift % 220;
-      roundedRect(x, 480 + i % 3 * 22, 112, 3, 2, "#94cfcc");
-      if (i % 2 === 0) {
-        roundedRect(x, 448, 136, 17, 8, "#f3e6c8");
-        roundedRect(x + 46, 402, 5, 48, 2, "#543c35");
-        ctx.beginPath();
-        ctx.moveTo(x + 52, 401);
-        ctx.lineTo(x + 52, 445);
-        ctx.lineTo(x + 90, 445);
-        ctx.fillStyle = "#fff8dc";
-        ctx.fill();
-      }
-    }
-    const center = 1450 - drift * 2;
-    for (let row = 0; row < 7; row++) {
-      ctx.beginPath();
-      ctx.ellipse(center, 390 + row * 12, 175 + row * 18, 48, 0, Math.PI, 2 * Math.PI);
-      ctx.strokeStyle = row % 2 ? "#b38d68" : "#ead0a4";
-      ctx.lineWidth = 11;
-      ctx.stroke();
-    }
-    for (let i = 0; i < 6; i++) {
-      roundedRect(center - 120 + i * 44, 306, 10, 84, 2, "#dec299");
-    }
-  } else if (level.theme === "italy") {
+  if (level.theme === "italy") {
     for (let i=0;i<10;i++) {
       const x=i*420-drift%420;
       ctx.fillStyle=i%2?"#e9895e":"#f3b569"; ctx.fillRect(x,FLOOR-245,250,245);
@@ -888,6 +855,10 @@ function drawBackdrop() {
 
 function draw() {
   ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+  if (levelIndex === CARTAGENA_LEVEL) {
+    drawCarmenRun();
+    return;
+  }
   if (levelIndex === RACE_LEVEL) {
     drawCartagenaRace();
     return;
@@ -1045,6 +1016,173 @@ function draw() {
     roundedRect(W/2-170,50,340*(boss.hp/3),9,5,"#ff587d");
     ctx.textAlign="left";
   }
+}
+
+function startCarmenRun() {
+  for (const key of Object.keys(keys)) keys[key] = false;
+  carmen = {
+    distance: 0, checkpoint: 0, lane: 0, position: 0, jump: 0, velocity: 0,
+    obstacles: Array.from({length: 21}, (_, i) => ({
+      distance: 510 + i * 260,
+      lane: [0,1,-1,0,-1,1][i % 6],
+      tall: i % 3 === 1
+    }))
+  };
+  levelLabel.textContent = "5 / 6";
+}
+
+function updateCarmenRun() {
+  const previous = carmen.distance;
+  carmen.distance += 5.5;
+  runPhase += .33;
+  carmen.lane = Number(keys.right) - Number(keys.left);
+  if (carmen.lane) carmen.position += carmen.lane * .085;
+  carmen.position = Math.max(-1, Math.min(1, carmen.position));
+  if (keys.jump && carmen.jump === 0) {
+    carmen.velocity = 13;
+    beep(390);
+  }
+  keys.jump = keys.fire = false;
+  carmen.jump = Math.max(0,carmen.jump + carmen.velocity);
+  carmen.velocity = carmen.jump ? carmen.velocity - .72 : 0;
+  if (carmen.distance >= 3100) carmen.checkpoint = 3100;
+  for (const obstacle of carmen.obstacles) {
+    if (previous >= obstacle.distance || carmen.distance < obstacle.distance ||
+        Math.abs(obstacle.lane - carmen.position) > .44 ||
+        (!obstacle.tall && carmen.jump > 35)) continue;
+    playDeathSound();
+    if (!infiniteLives) lives--;
+    if (lives <= 0) {
+      state = "gameover";
+      showMessage("CALLE DEL CARMEN", "Se acabaron los zurrones", "Vuelve a intentarlo desde el principio de la calle.", "Reintentar");
+      nextLevelIndex = CARTAGENA_LEVEL;
+      lives = 3;
+    }
+    carmen.distance = carmen.checkpoint;
+    carmen.jump = carmen.velocity = carmen.position = 0;
+    return;
+  }
+  if (carmen.distance >= CARMEN_LENGTH) completeLevel();
+}
+
+function streetPoint(x, depth, height = 0) {
+  const scale = 260 / (260 + Math.max(-45,depth));
+  return [W / 2 + x * scale, 236 + (430 - height) * scale];
+}
+
+function streetShape(points, color) {
+  ctx.beginPath();
+  for (const [x,y] of points) ctx.lineTo(x,y);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function drawCarmenFacade(side, near, far, index) {
+  const wall = side * 390;
+  const panel = (a,b,bottom,top,color) => streetShape([
+    streetPoint(wall,a,bottom),streetPoint(wall,b,bottom),
+    streetPoint(wall,b,top),streetPoint(wall,a,top)
+  ],color);
+  const church = side === 1 && index === 7;
+  const height = church ? 710 : 515 + index % 3 * 55;
+  panel(near,far,0,height,church ? "#eac59c" : ["#e6a379","#ecd4af","#cea494","#f2be83"][index % 4]);
+  panel(near,far,0,35,"#807067");
+  panel(near,far,height-17,height,"#fbebd3");
+  if (church) {
+    panel(near+45,far-35,0,205,"#56433e");
+    panel(near+32,near+52,0,230,"#fff1cf");
+    panel(far-52,far-32,0,230,"#fff1cf");
+    panel(near+100,far-85,310,395,"#7d6254");
+    panel(near+137,near+150,590,680,"#765545");
+    panel(near+112,near+175,632,645,"#765545");
+    return;
+  }
+  for (let offset=30; offset<250; offset+=84) {
+    const a = near + offset;
+    panel(a,a+54,18,156,"#384c52");
+    panel(a-5,a+59,147,164,index % 2 ? "#326f69" : "#9c4e43");
+    for (const floor of [220,365]) {
+      panel(a-6,a+57,floor-12,floor+85,"#f5dfbb");
+      panel(a,a+51,floor,floor+73,"#3c565e");
+      panel(a-7,a+58,floor-12,floor-3,"#594c4b");
+      for (let bar=0;bar<57;bar+=11) panel(a+bar,a+bar+3,floor-11,floor+22,"#594c4b");
+    }
+  }
+}
+
+function drawCarmenRun() {
+  const sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,"#509dc3");
+  sky.addColorStop(.48,"#f8dfb7");
+  sky.addColorStop(1,"#aa8a77");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0,0,W,H);
+  const offset = carmen.distance % 300;
+  const first = Math.floor(carmen.distance / 300);
+  for (let i=10;i>=0;i--) {
+    const near = i * 300 - offset;
+    const far = near + 300;
+    streetShape([streetPoint(-390,near),streetPoint(390,near),streetPoint(390,far),streetPoint(-390,far)],
+      (first+i)%2 ? "#d2b49d" : "#dbc0a6");
+    for (let row=0; row<300; row+=48) {
+      const z = near+row;
+      streetShape([streetPoint(-380,z),streetPoint(380,z),streetPoint(380,z+3),streetPoint(-380,z+3)],"#a98f7f");
+    }
+    for (const x of [-130,130]) {
+      streetShape([streetPoint(x,near),streetPoint(x+3,near),streetPoint(x+3,far),streetPoint(x,far)],"#b09888");
+    }
+    drawCarmenFacade(-1,near,far,first+i);
+    drawCarmenFacade(1,near,far,first+i);
+  }
+  for (let i=carmen.obstacles.length-1;i>=0;i--) {
+    const item = carmen.obstacles[i];
+    const depth = item.distance - carmen.distance;
+    if (depth < -60 || depth > 2000) continue;
+    const [x,y] = streetPoint(item.lane*210,depth);
+    const size = 260 / (260 + depth);
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(size,size);
+    roundedRect(-58,-11,116,17,8,"#49352945");
+    roundedRect(-48,item.tall?-110:-45,96,item.tall?110:45,8,item.tall?"#496e63":"#a35c40");
+    roundedRect(-53,item.tall?-114:-47,106,9,4,item.tall?"#b6c7ad":"#e4bd8b");
+    if (item.tall) {
+      for (let j=-32;j<=32;j+=16) roundedRect(j-11,-140-(j%3)*3,22,40,11,"#387c55");
+    }
+    ctx.restore();
+  }
+  const finishDepth = CARMEN_LENGTH - carmen.distance;
+  if (finishDepth < 1500) {
+    const [finishX,finishY] = streetPoint(0,finishDepth,188);
+    const size = 260 / (260 + Math.max(0,finishDepth));
+    ctx.save();
+    ctx.translate(finishX,finishY);
+    ctx.scale(size,size);
+    roundedRect(-260,-20,520,63,9,"#285b6a");
+    ctx.fillStyle = "#fff3d5";
+    ctx.textAlign = "center";
+    ctx.font = "bold 27px sans-serif";
+    ctx.fillText("PLAZA DEL ICUE",0,20);
+    ctx.restore();
+  }
+  const [x,y] = streetPoint(carmen.position*210,0);
+  ctx.fillStyle = "#48393266";
+  ctx.beginPath(); ctx.ellipse(x,y,36,10,0,0,Math.PI*2); ctx.fill();
+  ctx.save();
+  ctx.translate(x,y-42-carmen.jump);
+  ctx.scale(1.42,1.42);
+  drawAdultMarco(carmen.jump === 0);
+  ctx.restore();
+  const progress = Math.min(1,carmen.distance/CARMEN_LENGTH);
+  roundedRect(22,22,427,104,16,"#181f2ded");
+  ctx.fillStyle = "#fff0d5";
+  ctx.font = "bold 25px sans-serif";
+  ctx.fillText("CARTAGENA · CALLE DEL CARMEN",40,55);
+  ctx.font = "bold 17px sans-serif";
+  ctx.fillText(`Plaza del Icue  ·  ${infiniteLives ? "∞" : lives} vidas`,40,84);
+  roundedRect(40,101,390,7,4,"#ffffff36");
+  if (progress) roundedRect(40,101,390*progress,7,4,"#ffd65a");
 }
 
 function startCartagenaRace() {
@@ -1208,9 +1346,6 @@ function drawAdultMarco(running) {
   roundedRect(14,-37,4,5,2,"#241918");
   roundedRect(10,-28,13,4,2,"#38201a");
   roundedRect(1,-24,19,9,4,"#38201a");
-  if (player.hasMonkey && monkeyPopImage.complete && monkeyPopImage.naturalWidth) {
-    ctx.drawImage(monkeyPopImage,-37,-49,31,31);
-  }
 }
 
 function drawPlayer() {
@@ -1219,11 +1354,6 @@ function drawPlayer() {
   const bob = running ? Math.abs(Math.sin(runPhase)) * 4 : 0;
   ctx.save(); ctx.translate(x+w/2,y+h/2-bob); ctx.scale(facing,1);
   ctx.rotate(running ? Math.sin(runPhase) * .035 : 0);
-  if (levelIndex === CARTAGENA_LEVEL) {
-    drawAdultMarco(running);
-    ctx.restore();
-    return;
-  }
   const wearsJacket = levelIndex === 2;
   const runSheet = wearsJacket
     ? world3JacketRunSheetImage
