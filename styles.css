@@ -231,6 +231,11 @@ canvas {
 .keys b { padding: 5px 8px; border-radius: 6px; color: white; background: #ffffff14; }
 
 .mobile-controls { display: none; }
+.turbo-label { display: none; }
+.race-mode .hud > div,
+.race-mode .mobile-controls .fire,
+.race-mode .jump-label { display: none; }
+.race-mode .turbo-label { display: inline; font-size: .4em; font-weight: 800; text-transform: uppercase; }
 
 footer { padding: 14px 6px 0; color: var(--muted); font-size: 11px; }
 footer p { margin: 0; }

@@ -72,6 +72,9 @@ const levelCompleteVideos = ["world1-complete-video.mp4","world2-complete-video.
 
 const ARGENTINA_LEVEL = 3;
 const CARTAGENA_LEVEL = 4;
+const RACE_LEVEL = 5;
+const RACE_LENGTH = 7200;
+let race;
 const levels = [
   {
     name: "Italia - El comienzo", theme: "italy", width: 4500, sky: ["#68b9ef", "#ffd9a0"], ground: "#9b623c",
@@ -260,6 +263,11 @@ function findEnemyPlatform(raw, enemyX, enemyY, enemyW) {
 function loadLevel(index) {
   nextLevelIndex = null;
   levelIndex = index;
+  document.body.classList.toggle("race-mode", index === RACE_LEVEL);
+  if (index === RACE_LEVEL) {
+    startCartagenaRace();
+    return;
+  }
   level = structuredClone(levels[index]);
   level.moving ||= [];
   if (index !== CARTAGENA_LEVEL) extendLevel(level,index);
@@ -327,7 +335,7 @@ function loadLevel(index) {
 
 function updateHud() {
   const requiredBoxes = level.boxes.filter(box => box.countsForCompletion !== false);
-  levelLabel.textContent = `${levelIndex + 1} / ${levels.length}`;
+  levelLabel.textContent = `${levelIndex + 1} / ${RACE_LEVEL + 1}`;
   coinLabel.textContent = coins;
   bananaLabel.textContent = bananaAmmo;
   mobileBananaLabel.textContent = bananaAmmo;
@@ -507,10 +515,11 @@ function showMessage(kicker, title, text, button) {
 function completeLevel() {
   beep(740, .35);
   if (levelIndex === CARTAGENA_LEVEL) {
-    state = "won";
+    state = "complete";
+    nextLevelIndex = RACE_LEVEL;
     messageCard.classList.remove("victory", "level-video");
     storyVisual.className = "story-visual";
-    showMessage("CARTAGENA COMPLETADA", "¡Hasta la próxima, Marco!", "Has recorrido el puerto y llegado al teatro romano.", "Jugar de nuevo");
+    showMessage("CARTAGENA COMPLETADA", "¡Al volante, Marco!", "El Fiesta te espera para una carrera por el puerto. Dirige con las flechas y activa el turbo con espacio o el botón TURBO.", "Empezar carrera");
     return;
   }
   const requiredBoxes = level.boxes.filter(box => box.countsForCompletion !== false);
@@ -549,6 +558,10 @@ function completeLevel() {
 
 function update(dt) {
   if (state !== "playing") return;
+  if (levelIndex === RACE_LEVEL) {
+    updateCartagenaRace();
+    return;
+  }
   const speed = player.hasMonkey ? 7.4 : 5.0;
   player.vx += ((keys.right ? speed : 0) - (keys.left ? speed : 0) - player.vx) * .22;
   if (keys.left) player.facing = -1;
@@ -875,6 +888,10 @@ function drawBackdrop() {
 
 function draw() {
   ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
+  if (levelIndex === RACE_LEVEL) {
+    drawCartagenaRace();
+    return;
+  }
   if (!level) loadLevel(0);
   const gradient = ctx.createLinearGradient(0,0,0,H);
   gradient.addColorStop(0, level.sky[0]); gradient.addColorStop(1, level.sky[1]);
@@ -1028,6 +1045,137 @@ function draw() {
     roundedRect(W/2-170,50,340*(boss.hp/3),9,5,"#ff587d");
     ctx.textAlign="left";
   }
+}
+
+function startCartagenaRace() {
+  for (const key of Object.keys(keys)) keys[key] = false;
+  race = {
+    distance: 0, offset: 0, speed: 0, boosts: 3, turbo: 0, cooldown: 0,
+    rivals: [
+      {distance: 180, lane: -190, speed: 9.55, color: "#bd483e"},
+      {distance: 330, lane: 185, speed: 9.35, color: "#d69b3b"},
+      {distance: 480, lane: 0, speed: 9.18, color: "#506942"}
+    ]
+  };
+  levelLabel.textContent = "6 / 6";
+}
+
+function updateCartagenaRace() {
+  const steering = Number(keys.right) - Number(keys.left);
+  race.offset = Math.max(-350, Math.min(350, race.offset + steering * 6));
+  if (keys.jump && race.boosts && !race.turbo) {
+    race.boosts--;
+    race.turbo = 110;
+    beep(560, .16);
+  }
+  keys.jump = keys.fire = false;
+  if (race.turbo) race.turbo--;
+  if (race.cooldown) race.cooldown--;
+  const target = race.turbo ? 15 : 9.4;
+  race.speed += (target - race.speed) * .045;
+  race.distance += race.speed;
+  for (const rival of race.rivals) {
+    rival.distance += rival.speed;
+    if (!race.cooldown && Math.abs(race.distance - rival.distance) < 96 &&
+        Math.abs(race.offset - rival.lane) < 72) {
+      race.speed *= .48;
+      race.turbo = 0;
+      race.cooldown = 60;
+      beep(125, .16);
+    }
+  }
+  if (race.distance < RACE_LENGTH) return;
+  const place = 1 + race.rivals.filter(rival => rival.distance >= RACE_LENGTH).length;
+  state = place === 1 ? "won" : "complete";
+  nextLevelIndex = place === 1 ? null : RACE_LEVEL;
+  messageCard.classList.remove("victory", "level-video");
+  storyVisual.className = "story-visual";
+  showMessage("META · CARTAGENA", place === 1 ? "¡Marco gana la carrera!" : `Puesto ${place} de 4`,
+    "Ford Fiesta Trip azul · 1989 · 3900AF", place === 1 ? "Jugar de nuevo" : "Repetir carrera");
+}
+
+function raceRoadCenter(distance) {
+  return W / 2 + Math.sin(distance / 710) * 130 + Math.sin(distance / 330) * 36;
+}
+
+function drawRaceCar(x, y, color, isMarco = false) {
+  ctx.save();
+  ctx.translate(x, y);
+  roundedRect(-43,-62,86,139,13,"#131e2b55");
+  for (const side of [-1,1]) {
+    roundedRect(side*37-7,-51,14,31,4,"#22242b");
+    roundedRect(side*37-7,27,14,31,4,"#22242b");
+  }
+  roundedRect(-37,-67,74,135,9,color);
+  roundedRect(-31,-60,62,33,5,isMarco?"#438ee0":color);
+  roundedRect(-30,-28,60,34,5,"#273d50");
+  if (isMarco) {
+    roundedRect(-23,-21,21,22,6,"#fff6e1");
+    roundedRect(-21,-23,17,16,6,"#332018");
+    roundedRect(-18,-19,12,9,3,"#eab68b");
+    roundedRect(-18,-13,12,5,2,"#332018");
+  }
+  roundedRect(-31,7,62,24,4,color);
+  roundedRect(-28,32,56,18,3,"#273d50");
+  roundedRect(-37,59,74,11,2,"#22242b");
+  for (const side of [-1,1]) {
+    roundedRect(side*25-8,-64,16,7,2,"#fff1ac");
+    roundedRect(side*26-7,53,14,7,2,"#f45052");
+  }
+  if (isMarco) {
+    roundedRect(-25,54,50,15,2,"#f9f5e9");
+    ctx.textAlign = "center";
+    ctx.font = "bold 12px monospace";
+    ctx.fillStyle = "#151923";
+    ctx.fillText("3900AF",0,66);
+  }
+  ctx.restore();
+}
+
+function drawCartagenaRace() {
+  ctx.fillStyle = "#238ca3";
+  ctx.fillRect(0,0,W,H);
+  for (let y=0; y<H; y+=8) {
+    const distance = race.distance + 512 - y;
+    const center = raceRoadCenter(distance);
+    ctx.fillStyle = "#c5a47f";
+    ctx.fillRect(center-423,y,W,8);
+    ctx.fillStyle = "#e6cb9d";
+    ctx.fillRect(center-402,y,804,8);
+    ctx.fillStyle = "#333d49";
+    ctx.fillRect(center-383,y,766,8);
+    if (((distance % 96) + 96) % 96 < 45) {
+      ctx.fillStyle = "#f4e5be";
+      for (const lane of [-112,112]) ctx.fillRect(center+lane,y,4,8);
+    }
+    if (distance >= RACE_LENGTH && distance < RACE_LENGTH + 32) {
+      for (let i=0; i<32; i++) {
+        ctx.fillStyle = (i + Math.floor((distance-RACE_LENGTH)/8)) % 2 ? "#151923" : "#fff9ec";
+        ctx.fillRect(center-382+i*24,y,24,8);
+      }
+    }
+  }
+  for (let i=-1; i<7; i++) {
+    const y = ((race.distance * .8) % 160) + i * 160;
+    const center = raceRoadCenter(race.distance + 512 - y);
+    roundedRect(center-476,y,24,82,10,"#f2eee0");
+    roundedRect(center-472,y+19,16,36,5,"#357b91");
+    roundedRect(center+429,y,110,97,9,i%2?"#bd825b":"#e4c49b");
+    roundedRect(center+449,y+18,20,37,4,"#49636d");
+    roundedRect(center+489,y+18,20,37,4,"#49636d");
+  }
+  for (const rival of race.rivals) {
+    const y = 512 + race.distance - rival.distance;
+    if (y > -80 && y < H+80) drawRaceCar(raceRoadCenter(rival.distance)+rival.lane,y,rival.color);
+  }
+  drawRaceCar(raceRoadCenter(race.distance)+race.offset,512,"#225ba6",true);
+  roundedRect(22,24,378,105,16,"#101829e8");
+  ctx.fillStyle = "#fff8e6";
+  ctx.font = "bold 23px sans-serif";
+  ctx.fillText("CARTAGENA · CARRERA DEL PUERTO",40,57);
+  const place = 1 + race.rivals.filter(rival => rival.distance > race.distance).length;
+  ctx.font = "bold 20px sans-serif";
+  ctx.fillText(`Puesto ${place}/4   ·   Turbo ${race.boosts}   ·   ${Math.min(100,Math.floor(race.distance*100/RACE_LENGTH))}%`,40,95);
 }
 
 function drawAdultMarco(running) {
@@ -1185,7 +1333,7 @@ addEventListener("blur", () => {
   for (const key of Object.keys(keys)) keys[key] = false;
 });
 document.addEventListener("pointerdown", e => {
-  if (e.pointerType === "mouse" || e.target.closest("button") || state !== "playing") return;
+  if (e.pointerType === "mouse" || e.target.closest("button") || state !== "playing" || levelIndex === RACE_LEVEL) return;
   e.preventDefault();
   keys.jump = true;
 });

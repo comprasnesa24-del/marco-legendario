@@ -10,7 +10,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-    <link rel="stylesheet" href="styles.css?v=marco-31">
+    <link rel="stylesheet" href="styles.css?v=marco-44">
   </head>
   <body>
     <div class="rotate-notice" aria-hidden="true">
@@ -29,7 +29,7 @@
           </div>
         </div>
         <div class="hud" aria-label="Marcador">
-          <div><span>NIVEL</span><strong id="levelLabel">1 / 4</strong></div>
+          <div><span>NIVEL</span><strong id="levelLabel">1 / 6</strong></div>
           <div><span>MONEDAS</span><strong id="coinLabel">0</strong></div>
           <div><span>PLÁTANOS</span><strong id="bananaLabel">0</strong></div>
           <div><span>CAJAS</span><strong id="boxLabel">0 / 6</strong></div>
@@ -74,7 +74,7 @@
           <button data-control="left" type="button">←</button>
           <button data-control="right" type="button">→</button>
           <button class="fire" data-control="fire" type="button" aria-label="Lanzar plátano"><span>🍌</span><strong id="mobileBananaLabel">0</strong></button>
-          <button class="jump" data-control="jump" type="button">↑</button>
+          <button class="jump" data-control="jump" type="button"><span class="jump-label">↑</span><span class="turbo-label">Turbo</span></button>
         </div>
       </section>
 
@@ -84,7 +84,7 @@
       </footer>
     </main>
     <audio id="introMusic" src="intro-marco.mp3" preload="metadata" loop></audio>
-    <script src="app.js?v=marco-43"></script>
+    <script src="app.js?v=marco-44"></script>
     <script>
       if ("serviceWorker" in navigator) {
         addEventListener("load", () => {
