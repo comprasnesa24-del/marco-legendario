@@ -452,6 +452,7 @@ function playMonkeyBoxSound() {
 }
 
 function respawn() {
+  if (state !== "playing") return;
   if (!infiniteLives) lives--;
   playDeathSound();
   updateHud();
@@ -629,7 +630,10 @@ function update(dt) {
     for(let i=0;i<18;i++) particles.push({x:level.checkpoint.x,y:level.checkpoint.y,vx:Math.random()*7-3.5,vy:Math.random()*-6,life:40});
   }
 
-  if (player.y > H + 120) respawn();
+  if (player.y > H + 120) {
+    respawn();
+    return;
+  }
   if (player.invulnerable > 0) player.invulnerable--;
 
   level.coins.forEach((coin) => {
@@ -643,7 +647,11 @@ function update(dt) {
     if (!enemy.alive) return;
     if (enemy.invulnerable > 0) enemy.invulnerable--;
     enemy.x += enemy.dir * enemy.speed;
-    if (enemy.x > enemy.start + enemy.range || enemy.x < enemy.start) enemy.dir *= -1;
+    const patrolEnd = enemy.start + enemy.range;
+    if (enemy.x >= patrolEnd || enemy.x <= enemy.start) {
+      enemy.x = Math.max(enemy.start, Math.min(enemy.x, patrolEnd));
+      enemy.dir *= -1;
+    }
     const box = { x: enemy.x, y: enemy.y, w: enemy.w, h: enemy.h };
     if (rectHit(player, box)) {
       const stompZone = { x: enemy.x - 14, y: enemy.y - 10, w: enemy.w + 28, h: 30 };
@@ -704,7 +712,7 @@ function update(dt) {
   });
 
   const [gx, gy] = level.goal;
-  if (rectHit(player, {x: gx, y: gy, w: 70, h: 130}) && (!boss || boss.defeated)) completeLevel();
+  if (state === "playing" && rectHit(player, {x: gx, y: gy, w: 70, h: 130}) && (!boss || boss.defeated)) completeLevel();
   cameraX += (Math.max(0, Math.min(level.width - W, player.x - W * .35)) - cameraX) * .08;
   particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .2; p.life--; });
   particles = particles.filter(p => p.life > 0);
@@ -823,6 +831,7 @@ function drawBackdrop() {
 }
 
 function draw() {
+  ctx.setTransform(canvas.width / W, 0, 0, canvas.height / H, 0, 0);
   if (!level) loadLevel(0);
   const gradient = ctx.createLinearGradient(0,0,0,H);
   gradient.addColorStop(0, level.sky[0]); gradient.addColorStop(1, level.sky[1]);
@@ -1025,9 +1034,28 @@ function drawPlayer() {
   ctx.restore();
 }
 
+const frameStep = 1000 / 60;
+let accumulatedTime = 0;
+
 function loop(time) {
-  const dt = Math.min(2, (time-lastTime)/16.67 || 1); lastTime=time;
-  update(dt); draw(); requestAnimationFrame(loop);
+  accumulatedTime += lastTime ? Math.min(time - lastTime, frameStep * 3) : frameStep;
+  lastTime = time;
+  while (accumulatedTime >= frameStep) {
+    update(1);
+    accumulatedTime -= frameStep;
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function resizeCanvas() {
+  const bounds = canvas.getBoundingClientRect();
+  if (!bounds.width || !bounds.height) return;
+  const scale = Math.min(window.devicePixelRatio || 1, 2, 2560 / bounds.width, 1440 / bounds.height);
+  const width = Math.max(1, Math.round(bounds.width * scale));
+  const height = Math.max(1, Math.round(bounds.height * scale));
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
 }
 
 function setKey(event, pressed) {
@@ -1043,9 +1071,11 @@ function syncMobileViewport() {
   const height = viewport?.height || window.innerHeight || document.documentElement.clientHeight;
   document.documentElement.style.setProperty("--app-width", `${Math.round(width)}px`);
   document.documentElement.style.setProperty("--app-height", `${Math.round(height)}px`);
+  resizeCanvas();
 }
 
 syncMobileViewport();
+new ResizeObserver(resizeCanvas).observe(canvas);
 addEventListener("resize", syncMobileViewport);
 addEventListener("orientationchange", syncMobileViewport);
 window.visualViewport?.addEventListener("resize", syncMobileViewport);
@@ -1059,9 +1089,17 @@ addEventListener("keydown", e => setKey(e,true));
 addEventListener("keyup", e => setKey(e,false));
 document.querySelectorAll("[data-control]").forEach(button => {
   const control=button.dataset.control;
-  button.addEventListener("pointerdown", e => { e.preventDefault(); keys[control]=true; });
-  button.addEventListener("pointerup", () => keys[control]=false);
-  button.addEventListener("pointercancel", () => keys[control]=false);
+  button.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    button.setPointerCapture(event.pointerId);
+    keys[control] = true;
+  });
+  button.addEventListener("lostpointercapture", () => {
+    if (control === "left" || control === "right") keys[control] = false;
+  });
+});
+addEventListener("blur", () => {
+  for (const key of Object.keys(keys)) keys[key] = false;
 });
 document.addEventListener("pointerdown", e => {
   if (e.pointerType === "mouse" || e.target.closest("button") || state !== "playing") return;
