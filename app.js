@@ -318,18 +318,7 @@ function updateHud() {
     : `<i></i><b class="life-count">x${Math.max(0, lives)}</b>`;
 }
 
-async function enterGameFullscreen() {
-  try {
-    if (!document.fullscreenElement) await document.documentElement.requestFullscreen({ navigationUI: "hide" });
-  } catch {}
-  try {
-    await screen.orientation?.lock?.("landscape");
-  } catch {}
-  syncMobileViewport();
-}
-
 function startGame() {
-  enterGameFullscreen();
   endingVideo.pause();
   endingVideo.currentTime = 0;
   lives = 3; infiniteLives = false; coins = 0; companionUnlocked = false; perfectLevels=[false,false,false,false]; loadLevel(0); state = "playing";
